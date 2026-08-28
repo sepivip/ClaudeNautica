@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Vite build output
+dist/
+.vite/
+
+# Capture + measurement output (multi-GB; regenerate with tools/capture.mjs)
+shots/
+blind/
+
+# Reference plates are NOT redistributed — see README, "Reference material"
+reference/subnautica/
+
+# Agent scratch: ad-hoc probe scripts and crops left behind by builders/critics
+.crit*.mjs
+_crit_*.mjs
+.tmp-*/
+.uw*.mjs
+.crop-tmp.mjs
+crit[0-9]*/
+crop.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

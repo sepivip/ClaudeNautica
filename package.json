@@ -1,0 +1,20 @@
+{
+  "name": "claudenautica",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "shots": "node tools/capture.mjs",
+    "progress": "node tools/progress.mjs"
+  },
+  "dependencies": {
+    "three": "^0.171.0"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0",
+    "vite": "^6.0.0"
+  }
+}

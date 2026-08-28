@@ -1,0 +1,21 @@
+#!/bin/sh
+# Block commits that leave the game unrenderable.
+#
+# A vertex-stage fwidth() once failed to link 34-37 shader programs. Nothing
+# threw, every module reported OK, and a full round of agent work was spent
+# critiquing a game that was not drawing. This hook is the cost of never
+# repeating that: about 40 seconds.
+#
+# Skip only with a deliberate, visible override:  SKIP_VERIFY=1 git commit ...
+if [ -n "$SKIP_VERIFY" ]; then
+  echo "pre-commit: build verification SKIPPED by SKIP_VERIFY"
+  exit 0
+fi
+echo "pre-commit: verifying the build renders..."
+if ! node tools/verify.mjs; then
+  echo ""
+  echo "pre-commit: REFUSING THE COMMIT — the build does not render."
+  echo "pre-commit: fix it, or commit with SKIP_VERIFY=1 if you know why."
+  exit 1
+fi
+exit 0

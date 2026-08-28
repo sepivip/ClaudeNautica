@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ClaudeNautica — Build Progress</title>
+<meta http-equiv="refresh" content="20">
+<style>
+  :root{--bg:#04121a;--bg2:#08202e;--line:#12384c;--fg:#cfe9f2;--dim:#7ba7ba;--acc:#4fd8ff}
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1200px 700px at 70% -10%, #0d3b52 0%, transparent 60%),
+      linear-gradient(#04121a, #020a10 70%);
+    color:var(--fg);font:15px/1.55 "Segoe UI",system-ui,sans-serif;min-height:100vh}
+  .wrap{max-width:1320px;margin:0 auto;padding:34px 22px 90px}
+  h1{font-size:26px;margin:0;letter-spacing:.02em}
+  h1 em{font-style:normal;color:var(--acc)}
+  .sub{color:var(--dim);margin:6px 0 0;font-size:13.5px}
+  .top{display:flex;flex-wrap:wrap;gap:26px;align-items:center;justify-content:space-between;
+    border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:26px}
+  .stats{display:flex;gap:26px;flex-wrap:wrap}
+  .stat b{display:block;font-size:27px;color:var(--acc);font-weight:600;line-height:1.1}
+  .stat span{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
+  .card{background:linear-gradient(#0a2333,#071a26);border:1px solid var(--line);border-radius:12px;
+    padding:16px 17px;display:flex;flex-direction:column;gap:9px}
+  .card.won{border-color:#3ddc9755;box-shadow:0 0 0 1px #3ddc9722,0 8px 30px -18px #3ddc97}
+  .card header{display:flex;align-items:center;gap:9px}
+  .card h3{margin:0;font-size:16px;font-weight:600;flex:1}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 9px currentColor}
+  .badge{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;border:1px solid;border-radius:20px;padding:2px 9px}
+  .desc{margin:0;color:var(--dim);font-size:13px}
+  .meta{display:flex;justify-content:space-between;font-size:11.5px;color:#5b8496}
+  .meta code{color:#6ea9bf;background:#0a2a3a;padding:1px 6px;border-radius:4px}
+  .score{display:flex;align-items:center;gap:10px}
+  .bar{position:relative;flex:1;height:7px;background:#0c2c3d;border-radius:4px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:4px;transition:width .5s}
+  .bar b{position:absolute;top:-3px;width:2px;height:13px;background:#3ddc97aa}
+  .num{font-size:15px;font-weight:600;color:var(--acc);white-space:nowrap}
+  .num em{font-style:normal;font-size:10.5px;color:var(--dim);margin-left:3px}
+  .hist{display:flex;align-items:center;gap:9px;color:var(--dim);font-size:11.5px}
+  .quote,.gap{font-size:12.5px;background:#06202e;border-left:2px solid var(--line);
+    padding:7px 10px;border-radius:0 6px 6px 0;color:#a9cfdd}
+  .gap{border-left-color:#ff7ac6}
+  .quote b,.gap b{color:var(--fg)}
+  .shots{display:flex;flex-direction:column;gap:9px;margin-top:3px}
+  .cmp{margin:0}
+  .pair{display:flex;gap:5px}
+  .half{position:relative;flex:1;min-width:0}
+  .half img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block;background:#02090e}
+  .half span{position:absolute;left:5px;bottom:5px;font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;
+    background:#000a;padding:1.5px 6px;border-radius:3px;color:#cfe9f2}
+  figcaption{font-size:11px;color:#5b8496;margin-top:3px}
+  .notes{margin-top:34px;border-top:1px solid var(--line);padding-top:20px}
+  .notes h2{font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:0 0 10px}
+  .notes ul{list-style:none;margin:0;padding:0;font-size:13px;color:#a9cfdd}
+  .notes li{padding:4px 0;border-bottom:1px solid #0d2b3a;display:flex;gap:12px}
+  .notes time{color:#4f7a8c;flex:none;font-variant-numeric:tabular-nums}
+  footer{margin-top:30px;color:#41697b;font-size:11.5px}
+</style></head><body><div class="wrap">
+<div class="top">
+  <div><h1>Claude<em>Nautica</em></h1>
+    <p class="sub">Every subsystem is built by one agent, then torn apart by an independent critic holding real Subnautica frames. Auto-refreshes every 20s.</p></div>
+  <div class="stats">
+    <div class="stat"><b>18<span style="font-size:16px;color:#41697b">/18</span></b><span>In flight</span></div>
+    <div class="stat"><b>1</b><span>Beat reference</span></div>
+    <div class="stat"><b>58</b><span>Avg vs Subnautica</span></div>
+    <div class="stat"><b>58</b><span>Reference frames</span></div>
+  </div>
+</div>
+<div class="grid"><article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>WHOLE GAME</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">The composite, judged as one product a player would open</p>
+      <div class="meta"><code>src/(all)</code><span>round 32</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:42%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">42<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,19.8 L9.4,18.6 L18.9,18.6 L28.3,17.7 L37.7,17.7 L47.1,17.1 L56.6,17.1 L66.0,21.0 L75.4,25.5 L84.9,16.5 L94.3,16.5 L103.7,19.5 L113.1,16.5 L122.6,19.2 L132.0,17.4" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="19.8" r="2.2" fill="#4fd8ff"/><circle cx="9.4" cy="18.6" r="2.2" fill="#4fd8ff"/><circle cx="18.9" cy="18.6" r="2.2" fill="#4fd8ff"/><circle cx="28.3" cy="17.7" r="2.2" fill="#4fd8ff"/><circle cx="37.7" cy="17.7" r="2.2" fill="#4fd8ff"/><circle cx="47.1" cy="17.1" r="2.2" fill="#4fd8ff"/><circle cx="56.6" cy="17.1" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="21.0" r="2.2" fill="#4fd8ff"/><circle cx="75.4" cy="25.5" r="2.2" fill="#4fd8ff"/><circle cx="84.9" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="94.3" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="103.7" cy="19.5" r="2.2" fill="#4fd8ff"/><circle cx="113.1" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="122.6" cy="19.2" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="17.4" r="2.2" fill="#4fd8ff"/>
+  </svg><span>15 rounds</span></div>
+      <div class="quote"><b>Critic:</b> 14/14 on the fair subset - removing the four unjudgeable pairs changed nothing. The leak was never the pairing.</div>
+      <div class="gap"><b>Biggest gap:</b> Water SURFACE now decides more pairs than any other category (4 of 14): a hard black/cyan binary mask with no intermediate values, and sun glitter that is a perfectly regular orthogonal lattice of ~12 identical columns</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/blind-r32/base-interior.png" alt="ours base-interior"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/base-interior-1.jpg" alt="reference base-interior"><span>Subnautica</span></div>
+        </div>
+        <figcaption>base-interior</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/blind-r32/cave.png" alt="ours cave"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/cave-1.jpg" alt="reference cave"><span>Subnautica</span></div>
+        </div>
+        <figcaption>cave</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/blind-r32/creature-close.png" alt="ours creature-close"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/creature-close-1.jpg" alt="reference creature-close"><span>Subnautica</span></div>
+        </div>
+        <figcaption>creature-close</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Underwater Medium</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Depth/biome fog, absorption, god rays, marine snow</p>
+      <div class="meta"><code>src/render/underwater.js</code><span>round 31</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:67%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">67<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,21.6 L8.8,17.4 L17.6,16.5 L26.4,13.2 L35.2,8.7 L44.0,8.7 L52.8,9.3 L61.6,9.3 L70.4,8.4 L79.2,8.4 L88.0,9.6 L96.8,9.6 L105.6,10.2 L114.4,10.5 L123.2,10.8 L132.0,9.9" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="21.6" r="2.2" fill="#4fd8ff"/><circle cx="8.8" cy="17.4" r="2.2" fill="#4fd8ff"/><circle cx="17.6" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="26.4" cy="13.2" r="2.2" fill="#4fd8ff"/><circle cx="35.2" cy="8.7" r="2.2" fill="#4fd8ff"/><circle cx="44.0" cy="8.7" r="2.2" fill="#4fd8ff"/><circle cx="52.8" cy="9.3" r="2.2" fill="#4fd8ff"/><circle cx="61.6" cy="9.3" r="2.2" fill="#4fd8ff"/><circle cx="70.4" cy="8.4" r="2.2" fill="#4fd8ff"/><circle cx="79.2" cy="8.4" r="2.2" fill="#4fd8ff"/><circle cx="88.0" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="96.8" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="105.6" cy="10.2" r="2.2" fill="#4fd8ff"/><circle cx="114.4" cy="10.5" r="2.2" fill="#4fd8ff"/><circle cx="123.2" cy="10.8" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="9.9" r="2.2" fill="#4fd8ff"/>
+  </svg><span>16 rounds</span></div>
+      <div class="quote"><b>Critic:</b> REFUSAL CORRECT AND INDEPENDENTLY REPRODUCED; NOTHING SHIPPED. The briefed quarter is not there: ?uwGainChroma=0 on my own isolated captures moves godrays water G/B drift by +0.13 %/oct (code 1.64-&gt;1.77, linear 2.39-&gt;2.71; wide set 0.92-&gt;0.96 / 0.55-&gt;0.64), i.e. the WRONG WAY and about a tenth of the signal, all windows clipAny 0.00. It is a red+saturation term only: R% 8.56-&gt;7.91 code / 1.032-&gt;0.921 linear, sat 0.914-&gt;0.921. Shipped medium is unchanged from r30 on all 9 shots (median/sat/R%/bandGB/topBottom/hueVar identical to every published digit). Their two named traps both verified by me: our godrays bright end is the Snell window + compass halo (sd 6.3-16.3 vs medium 0.6-2.2, p99 G247/B246) and it alone manufactures the briefed 10% — 0.92 %/oct becomes 8.25 %/oct code / 18.69 linear the moment flat-window filtering is dropped; and ?nopostfx=1 godrays water rails clipAny 78.1-80.1%.</div>
+      <div class="gap"><b>Biggest gap:</b> Zero pixels changed, and the module's real standing defect went unnamed: our godrays water is RGB(16.6,148.5,190.5), G/B 0.780 — i.e. sitting on LOOK.md's 0-20 m #2C9BC8 chromaticity (G/B 0.775) at a 40 m open-ocean shot — but carrying R% 8.7 against that hex's 22.0, so we are 2.5x too LITTLE red at our own chromaticity, not too much. Next round must fix the target, not the ramp: godrays (40 m, open ocean, B&gt;G) has been colour-judged against godrays-1 (150 m, G&gt;B, R=0) for four rounds.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r31-crit/godrays.png" alt="ours godrays"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/godrays-1.jpg" alt="reference godrays"><span>Subnautica</span></div>
+        </div>
+        <figcaption>godrays</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r31-crit/grand-reef.png" alt="ours grand-reef"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/grand-reef-1.jpg" alt="reference grand-reef"><span>Subnautica</span></div>
+        </div>
+        <figcaption>grand-reef</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r31-crit/kelp-forest.png" alt="ours kelp-forest"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/kelp-forest-1.jpg" alt="reference kelp-forest"><span>Subnautica</span></div>
+        </div>
+        <figcaption>kelp-forest</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Water Surface</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Waves, refraction, sun glitter, the meniscus from below</p>
+      <div class="meta"><code>src/render/watersurface.js</code><span>round 34</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:53%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">53<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,19.5 L5.7,17.1 L11.5,13.8 L17.2,12.9 L23.0,12.9 L28.7,12.9 L34.4,12.3 L40.2,12.3 L45.9,11.1 L51.7,11.1 L57.4,10.5 L63.1,10.5 L68.9,9.6 L74.6,9.6 L80.3,17.4 L86.1,17.4 L91.8,13.2 L97.6,13.2 L103.3,12.6 L109.0,12.6 L114.8,13.8 L120.5,13.8 L126.3,14.1 L132.0,14.1" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="19.5" r="2.2" fill="#4fd8ff"/><circle cx="5.7" cy="17.1" r="2.2" fill="#4fd8ff"/><circle cx="11.5" cy="13.8" r="2.2" fill="#4fd8ff"/><circle cx="17.2" cy="12.9" r="2.2" fill="#4fd8ff"/><circle cx="23.0" cy="12.9" r="2.2" fill="#4fd8ff"/><circle cx="28.7" cy="12.9" r="2.2" fill="#4fd8ff"/><circle cx="34.4" cy="12.3" r="2.2" fill="#4fd8ff"/><circle cx="40.2" cy="12.3" r="2.2" fill="#4fd8ff"/><circle cx="45.9" cy="11.1" r="2.2" fill="#4fd8ff"/><circle cx="51.7" cy="11.1" r="2.2" fill="#4fd8ff"/><circle cx="57.4" cy="10.5" r="2.2" fill="#4fd8ff"/><circle cx="63.1" cy="10.5" r="2.2" fill="#4fd8ff"/><circle cx="68.9" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="74.6" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="80.3" cy="17.4" r="2.2" fill="#4fd8ff"/><circle cx="86.1" cy="17.4" r="2.2" fill="#4fd8ff"/><circle cx="91.8" cy="13.2" r="2.2" fill="#4fd8ff"/><circle cx="97.6" cy="13.2" r="2.2" fill="#4fd8ff"/><circle cx="103.3" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="109.0" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="114.8" cy="13.8" r="2.2" fill="#4fd8ff"/><circle cx="120.5" cy="13.8" r="2.2" fill="#4fd8ff"/><circle cx="126.3" cy="14.1" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="14.1" r="2.2" fill="#4fd8ff"/>
+  </svg><span>24 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Snell-rim fix is real and visible (6m ablation vs shipped at 3x: two-value stencil becomes a continuous ramp) and the glitter-lattice refusal reaches the right answer — the checkerboard is in blind-r32 and gone from three current captures, 14.2px@90deg FFT peak/annulus 172.2-&gt;24.0 in the fixed native window at 820,570 — but the shipped uRimRough=0.45 halves the 18m ceiling across four octaves (2nd -55%, 3rd -62%, 4th -52%, coarse -45%, range 114.4-&gt;79.3, p0.1 67.3-&gt;111.0) so it ships the very 13-20m wash it claimed to avoid, and the refusal's arithmetic is false: the table has two near-orthogonal adjacent-scale pairs (8.53m@71 vs 6.11m@-12 = 83deg; 1.09m@151 vs 0.73m@-117 = 88deg) and its bottom seven ratios are a sqrt2 ladder, not 'none repeated'.</div>
+      <div class="gap"><b>Biggest gap:</b> The lattice class did not go away, only that instance: at 3x the current surface-above far band is a regular parallel diagonal corduroy with a hard near-black dashed line along crest lines (4.32% under L60 vs the plate's 0.625%), untouched this round because every term added lives below water. Material-only, our sea crop 0.05,0.45,0.52,0.70 vs surface-above-2 crop 0.05,0.52,0.35,0.85 is monochromatic (hueVar 0.006 / 1 hue vs 0.017 / 2, and -1's 0.078 / 2), R% 22.3 vs 42.1, median 71.1 vs 150.8, and octave tilt 0.93 vs 2.28 — flat energy at every scale where a real sea is swell-dominated.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/watersurface-late-r34/base-interior.png" alt="ours base-interior"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/base-interior-1.jpg" alt="reference base-interior"><span>Subnautica</span></div>
+        </div>
+        <figcaption>base-interior</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/watersurface-late-r34/hud.png" alt="ours hud"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/hud-1.jpg" alt="reference hud"><span>Subnautica</span></div>
+        </div>
+        <figcaption>hud</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/watersurface-late-r34/shallows-reef.png" alt="ours shallows-reef"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/shallows-reef-1.jpg" alt="reference shallows-reef"><span>Subnautica</span></div>
+        </div>
+        <figcaption>shallows-reef</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Sky &amp; Day/Night</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Sun, moon, clouds, above-water atmosphere</p>
+      <div class="meta"><code>src/render/sky.js</code><span>round 34</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:58%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">58<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,18.0 L33.0,16.2 L66.0,15.6 L99.0,12.6 L132.0,12.6" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="18.0" r="2.2" fill="#4fd8ff"/><circle cx="33.0" cy="16.2" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="15.6" r="2.2" fill="#4fd8ff"/><circle cx="99.0" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="12.6" r="2.2" fill="#4fd8ff"/>
+  </svg><span>5 rounds</span></div>
+      <div class="quote"><b>Critic:</b> The standing night defect is genuinely closed — base hull went from 0.95x the water it stands in to 2.52x, with a 6.4:1 top-to-underside ramp — but the night still has no blacks and the clouds still have no internal form.</div>
+      <div class="gap"><b>Biggest gap:</b> Cloud-only windows carry 6.7 code levels of internal variation against the reference cumulus's 27-42; at 4x ours is a blurred veil with polygonal edges where the plate has cauliflower silhouettes and self-shadowed flanks.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/sky-late-r34/night-shallows.png" alt="ours night-shallows"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/night-shallows-1.jpg" alt="reference night-shallows"><span>Subnautica</span></div>
+        </div>
+        <figcaption>night-shallows</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/sky-late-r34/surface-above.png" alt="ours surface-above"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/surface-above-1.jpg" alt="reference surface-above"><span>Subnautica</span></div>
+        </div>
+        <figcaption>surface-above</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/sky-late-r34/surface-pod.png" alt="ours surface-pod"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/surface-pod-1.jpg" alt="reference surface-pod"><span>Subnautica</span></div>
+        </div>
+        <figcaption>surface-pod</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Post &amp; Grading</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Bloom, tonemap, per-depth grade, DoF, AA, distortion</p>
+      <div class="meta"><code>src/render/postfx.js</code><span>round 31</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:71%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">71<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,19.8 L4.6,18.3 L9.1,15.9 L13.7,15.3 L18.2,15.6 L22.8,14.4 L27.3,14.4 L31.9,12.9 L36.4,12.9 L41.0,17.4 L45.5,17.4 L50.1,18.0 L54.6,18.0 L59.2,9.0 L63.7,9.0 L68.3,13.2 L72.8,18.0 L77.4,18.0 L81.9,18.0 L86.5,11.4 L91.0,11.4 L95.6,10.8 L100.1,10.8 L104.7,9.0 L109.2,9.0 L113.8,10.2 L118.3,9.0 L122.9,11.1 L127.4,9.6 L132.0,8.7" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="19.8" r="2.2" fill="#4fd8ff"/><circle cx="4.6" cy="18.3" r="2.2" fill="#4fd8ff"/><circle cx="9.1" cy="15.9" r="2.2" fill="#4fd8ff"/><circle cx="13.7" cy="15.3" r="2.2" fill="#4fd8ff"/><circle cx="18.2" cy="15.6" r="2.2" fill="#4fd8ff"/><circle cx="22.8" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="27.3" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="31.9" cy="12.9" r="2.2" fill="#4fd8ff"/><circle cx="36.4" cy="12.9" r="2.2" fill="#4fd8ff"/><circle cx="41.0" cy="17.4" r="2.2" fill="#4fd8ff"/><circle cx="45.5" cy="17.4" r="2.2" fill="#4fd8ff"/><circle cx="50.1" cy="18.0" r="2.2" fill="#4fd8ff"/><circle cx="54.6" cy="18.0" r="2.2" fill="#4fd8ff"/><circle cx="59.2" cy="9.0" r="2.2" fill="#4fd8ff"/><circle cx="63.7" cy="9.0" r="2.2" fill="#4fd8ff"/><circle cx="68.3" cy="13.2" r="2.2" fill="#4fd8ff"/><circle cx="72.8" cy="18.0" r="2.2" fill="#4fd8ff"/><circle cx="77.4" cy="18.0" r="2.2" fill="#4fd8ff"/><circle cx="81.9" cy="18.0" r="2.2" fill="#4fd8ff"/><circle cx="86.5" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="91.0" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="95.6" cy="10.8" r="2.2" fill="#4fd8ff"/><circle cx="100.1" cy="10.8" r="2.2" fill="#4fd8ff"/><circle cx="104.7" cy="9.0" r="2.2" fill="#4fd8ff"/><circle cx="109.2" cy="9.0" r="2.2" fill="#4fd8ff"/><circle cx="113.8" cy="10.2" r="2.2" fill="#4fd8ff"/><circle cx="118.3" cy="9.0" r="2.2" fill="#4fd8ff"/><circle cx="122.9" cy="11.1" r="2.2" fill="#4fd8ff"/><circle cx="127.4" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="8.7" r="2.2" fill="#4fd8ff"/>
+  </svg><span>30 rounds</span></div>
+      <div class="quote"><b>Critic:</b> THE REFUTATION IS CORRECT AND I REPRODUCE IT ON MY OWN INSTRUMENT, BUT ITS MAGNITUDES ARE ~2x HIGH AND THE SHIPPED CODE IS A NO-OP. Encoder control (one real window, scaled in LINEAR, chromaticity mathematically constant, 7 scales 0.5-2.0x, clipAny 0.00 throughout): godrays (1650,450) code G/B +0.79 %/oct, R% +2.07 pts/oct, sat -0.021/oct while linear is flat to 4 digits (0.5783-&gt;0.5792); grand-reef (750,675) +4.64 / +5.27 / -0.053 vs linear -0.14 / +0.02 / -0.0002. Builder quoted +1.59/+4.62 and +6.66/+6.76 — same sign, same mechanism, roughly double. Plate control -0.18 %/oct: the bias really does point opposite ways in the two subjects. On grand-reef the metric INVERTS the sign of both red and saturation (code +1.76 pts/oct and -0.0176/oct; linear -1.40 and +0.0141) exactly as claimed. Bypass repair is real and verified: ?nopostfx=1 godrays water rails clipAny 78.1-80.1% (clipRGB up to G 80.1 / B 71.7, p90 250), ?nopostfx=1&amp;exposure=0.22 reads clipAny 0.00-0.13%, and the knob is an exact scalar (0.22 vs 0.44 = 2.0001-2.0003x linear luminance, linear G/B identical to 4 digits). whitenW ships as claimed: 9 shots identical to ?whiteneutral=0 on every column except p99.9 — hud 238.1-&gt;233.5 and shallows-reef 240.8-&gt;240.2 (both TOWARD shallows-reef-1's 235.3), seamoth 234.1-&gt;233.4. No regression anywhere: cave/deep-void/grand-reef/kelp/wreck bit-equal to r30.</div>
+      <div class="gap"><b>Biggest gap:</b> The stated gap is derived against the wrong plate. 'Our godrays water red 0.94-1.18% vs godrays-1's 0.06-0.19%' compares a 40 m open-ocean shot to a 150 m frame at the one depth in LOOK.md's whole ramp where red is authored to exactly 0 (#00AA9C). At our own measured G/B of 0.780, LOOK.md authors #2C9BC8 = RGB(44,155,200), R% 22.0; we deliver R% 8.7. The sign of the standing red gap is backwards. Also: four consecutive rounds (28-31) have now been spent on colour-metric epistemology with no pixel improved — fix tools/measure.mjs to decode per pixel to linear before averaging, publish clipAny with every statistic, and give the next round a target derived from a window that matches OUR shot's depth and biome.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r31-crit/godrays.png" alt="ours godrays"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/godrays-1.jpg" alt="reference godrays"><span>Subnautica</span></div>
+        </div>
+        <figcaption>godrays</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r31-crit/grand-reef.png" alt="ours grand-reef"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/grand-reef-1.jpg" alt="reference grand-reef"><span>Subnautica</span></div>
+        </div>
+        <figcaption>grand-reef</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r31-crit/kelp-forest.png" alt="ours kelp-forest"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/kelp-forest-1.jpg" alt="reference kelp-forest"><span>Subnautica</span></div>
+        </div>
+        <figcaption>kelp-forest</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Biomes</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Palettes, depth bands, spawn tables</p>
+      <div class="meta"><code>src/world/biomes.js</code><span>round 28</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:63%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">63<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,17.1 L33.0,12.6 L66.0,11.4 L99.0,14.4 L132.0,11.1" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="17.1" r="2.2" fill="#4fd8ff"/><circle cx="33.0" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="99.0" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="11.1" r="2.2" fill="#4fd8ff"/>
+  </svg><span>5 rounds</span></div>
+      <div class="quote"><b>Critic:</b> grand-reef LANDED and I reproduce it twice: on the builder's own water-only window ours px(120,360)-(460,660) vs grand-reef-2 px(600,64)-(1085,250), ungraded went 47.81 -&gt; 36.55 against a plate at 35.6-38.7 (1.31x -&gt; 1.01x), and the whole clean column now runs 43.4-&gt;33.2 against the plate water's 39.8-&gt;33.8. cave and shallows-reef ungraded are bit-identical to r27 on every column, so the no-regression claim is true. KELP IS A QUARTER-FIX ON A KNOB THAT CANNOT FINISH. Same window px(640,0)-(800,340): G 248.9 -&gt; 208.2, lum 212.4 -&gt; 163.2, against clean water in kelp-forest-1 px(20,60)-(110,170) at lum 44.2/G 58 and godrays-2 px(1080,180)-(1200,360) at 48.1/G 61 - still 3.7x, at 55m against plates at 15-29m. Two-point fit through the sRGB curve says only 55% of that window's linear green is level-driven: at level=0 it still reads G~174 vs a target of 46-83. The header admits a floor (G~127) and simultaneously claims 0.40 puts the blended far field at G 72 and the window was never re-measured after the change - the number the defect was defined on was not checked. G/B 0.660 at grand-reef was called a hit off a LOOK.md hex; the plate window says 0.522 on five separate windows, so it is a 1.26x miss and the brief's own rule was not applied to it.</div>
+      <div class="gap"><b>Biggest gap:</b> kelp water level, 3.7x ungraded / 4.3x graded on water-only windows. level scales fog+scatter only; kelp_forest's light budget - skylight 0.82, the same class of term that fixed grand_reef's ambientFloor - was never tested, and neither was the safe_shallows leak's contribution to LEVEL (only to blue). Measure px(640,0)-(800,340) after every change.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r28-crit/cave.png" alt="ours cave"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/cave-1.jpg" alt="reference cave"><span>Subnautica</span></div>
+        </div>
+        <figcaption>cave</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r28-crit/grand-reef.png" alt="ours grand-reef"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/grand-reef-1.jpg" alt="reference grand-reef"><span>Subnautica</span></div>
+        </div>
+        <figcaption>grand-reef</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/r28-crit/kelp-forest.png" alt="ours kelp-forest"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/kelp-forest-1.jpg" alt="reference kelp-forest"><span>Subnautica</span></div>
+        </div>
+        <figcaption>kelp-forest</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#ff7ac6"></span>
+        <h3>Terrain</h3>
+        <span class="badge" style="color:#ff7ac6;border-color:#ff7ac644">Iterating</span>
+      </header>
+      <p class="desc">Seabed, cliffs, drop-offs, LOD streaming</p>
+      <div class="meta"><code>src/world/terrain.js</code><span>round 34</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:57%;background:#ff7ac6"></i><b style="left:90%"></b></div>
+        <span class="num">57<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,12.6 L18.9,22.8 L37.7,19.5 L56.6,16.8 L75.4,16.8 L94.3,15.0 L113.1,13.8 L132.0,12.9" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="18.9" cy="22.8" r="2.2" fill="#4fd8ff"/><circle cx="37.7" cy="19.5" r="2.2" fill="#4fd8ff"/><circle cx="56.6" cy="16.8" r="2.2" fill="#4fd8ff"/><circle cx="75.4" cy="16.8" r="2.2" fill="#4fd8ff"/><circle cx="94.3" cy="15.0" r="2.2" fill="#4fd8ff"/><circle cx="113.1" cy="13.8" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="12.9" r="2.2" fill="#4fd8ff"/>
+  </svg><span>8 rounds</span></div>
+      <div class="quote"><b>Critic:</b> The caustic net is the one claim that fully reproduces — a runtime ablation of uCausticsStrength on a frozen frame gives 2.02:1 peak-to-shadow on terrain-only near sand, exactly LOOK.md's target — but the round's actual objective failed: at matched metre scale (raycast: 0.40 m per 100 px, camera 3.9 m off the sand) our sand is still a soft 0.1-0.25 m camouflage mottle with no grain against the reference's uniform 1-3 px granular speckle, and the headline -13.7%/-14.5% A/B does not reproduce because changing terrain.js reshuffles the shared RNG and moves every plant in the crop.</div>
+      <div class="gap"><b>Biggest gap:</b> The asset still has no surface: on terrain-only pixels (every other mesh hidden at runtime, same frozen frame) tileContrast/mean is 35.6-37.3% against the reference sand's 6.0% bright / 26.7% at matched mean luminance, and r7 lowered fine, mid, net AND coarse bands together by 5-20% instead of trading hard-edged contrast for broadband grain — detailRMS/mean fell 12.3%-&gt;10.7%, the wrong direction. The wired-in surface microstructure measures 1.12:1 on sand and 1.01:1 on the drop-off rock, i.e. inaudible exactly where LOOK.md wants material identity.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/terrain-r34/cave.png" alt="ours cave"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/cave-1.jpg" alt="reference cave"><span>Subnautica</span></div>
+        </div>
+        <figcaption>cave</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/terrain-r34/dropoff.png" alt="ours dropoff"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/dropoff-1.jpg" alt="reference dropoff"><span>Subnautica</span></div>
+        </div>
+        <figcaption>dropoff</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/terrain-r34/kelp-forest.png" alt="ours kelp-forest"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/kelp-forest-1.jpg" alt="reference kelp-forest"><span>Subnautica</span></div>
+        </div>
+        <figcaption>kelp-forest</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Flora</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Kelp, coral tubes, grass, bioluminescence</p>
+      <div class="meta"><code>src/world/flora.js</code><span>round 34</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:52%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">52<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,16.2 L26.4,13.5 L52.8,14.7 L79.2,14.7 L105.6,14.4 L132.0,14.4" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="16.2" r="2.2" fill="#4fd8ff"/><circle cx="26.4" cy="13.5" r="2.2" fill="#4fd8ff"/><circle cx="52.8" cy="14.7" r="2.2" fill="#4fd8ff"/><circle cx="79.2" cy="14.7" r="2.2" fill="#4fd8ff"/><circle cx="105.6" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="14.4" r="2.2" fill="#4fd8ff"/>
+  </svg><span>6 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Round 33's buildGrass rewrite is real and verified — ribbed blades with a midrib, twist and collar, sized into LOOK.md's band, turf up from a 15000 cap to 20963/26199/24597 clumps — but flora's own surface grain carries ~2x the reference's octave energy and buries that geometry under hard-edged pepper, and the creepvine is still black origami.</div>
+      <div class="gap"><b>Biggest gap:</b> Flora's own microstructure amplitude: near-plant window --crop=0.05,0.15,0.20,0.60 measures detail 24.53 / tileContrast 21.13 / octaves [12.48,13.94,17.38,21.16,22.18] against kelp-forest-3 --crop=0.10,0.60,0.30,0.95 at 22.70 / 11.83 / [6.45,6.36,7.00,8.59,12.09]; ablating with floraiso=1&amp;flnosurf=1 takes detail 20.69-&gt;11.53 and the finest octave 11.30-&gt;7.18, and the grain-off tuft is visibly the better plant at 9x.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/flora-late-r34/kelp-forest.png" alt="ours kelp-forest"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/kelp-forest-1.jpg" alt="reference kelp-forest"><span>Subnautica</span></div>
+        </div>
+        <figcaption>kelp-forest</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/flora-late-r34/motion-kelp-forest-00.png" alt="ours motion-kelp-forest-00"><span>ours</span></div>
+          
+        </div>
+        <figcaption>motion-kelp-forest-00</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/flora-late-r34/motion-kelp-forest-01.png" alt="ours motion-kelp-forest-01"><span>ours</span></div>
+          
+        </div>
+        <figcaption>motion-kelp-forest-01</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Caves, Wrecks &amp; POIs</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Cave systems, wreck interiors, the lifepod</p>
+      <div class="meta"><code>src/world/structures.js</code><span>round 32</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:39%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">39<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,14.4 L13.2,18.6 L26.4,16.2 L39.6,17.1 L52.8,14.4 L66.0,13.2 L79.2,11.4 L92.4,11.4 L105.6,11.4 L118.8,18.3 L132.0,18.3" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="13.2" cy="18.6" r="2.2" fill="#4fd8ff"/><circle cx="26.4" cy="16.2" r="2.2" fill="#4fd8ff"/><circle cx="39.6" cy="17.1" r="2.2" fill="#4fd8ff"/><circle cx="52.8" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="13.2" r="2.2" fill="#4fd8ff"/><circle cx="79.2" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="92.4" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="105.6" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="118.8" cy="18.3" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="18.3" r="2.2" fill="#4fd8ff"/>
+  </svg><span>11 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Lifepod chroma and the cap profile are real, reproducible gains, but the wreck rebuild was refused on a hull window that is 25% non-hull and that is 1.5-3x the plate on every octave, and at magnification our plating has no plate tessellation at all.</div>
+      <div class="gap"><b>Biggest gap:</b> Hull plating has no plate-to-plate tonal grid: texHull deliberately gives every plate identical albedo and SURF.hull.scale=0.006 caps surface.js at 0.30 m, so nothing in the pipeline can make the 2 m tessellation that is wreck-1's dominant read.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/structures-crit-r32/cave.png" alt="ours cave"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/cave-1.jpg" alt="reference cave"><span>Subnautica</span></div>
+        </div>
+        <figcaption>cave</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/structures-crit-r32/surface-pod.png" alt="ours surface-pod"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/surface-pod-1.jpg" alt="reference surface-pod"><span>Subnautica</span></div>
+        </div>
+        <figcaption>surface-pod</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/structures-crit-r32/wreck.png" alt="ours wreck"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/wreck-1.jpg" alt="reference wreck"><span>Subnautica</span></div>
+        </div>
+        <figcaption>wreck</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Creatures</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Bodies, swim animation, AI, leviathans</p>
+      <div class="meta"><code>src/life/creatures.js</code><span>round 32</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:44%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">44<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,16.5 L6.3,13.2 L12.6,12.3 L18.9,12.0 L25.1,14.7 L31.4,14.7 L37.7,17.7 L44.0,16.5 L50.3,16.5 L56.6,14.4 L62.9,14.4 L69.1,13.5 L75.4,13.5 L81.7,17.7 L88.0,17.7 L94.3,16.2 L100.6,16.2 L106.9,15.0 L113.1,15.0 L119.4,15.0 L125.7,16.8 L132.0,16.8" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="6.3" cy="13.2" r="2.2" fill="#4fd8ff"/><circle cx="12.6" cy="12.3" r="2.2" fill="#4fd8ff"/><circle cx="18.9" cy="12.0" r="2.2" fill="#4fd8ff"/><circle cx="25.1" cy="14.7" r="2.2" fill="#4fd8ff"/><circle cx="31.4" cy="14.7" r="2.2" fill="#4fd8ff"/><circle cx="37.7" cy="17.7" r="2.2" fill="#4fd8ff"/><circle cx="44.0" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="50.3" cy="16.5" r="2.2" fill="#4fd8ff"/><circle cx="56.6" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="62.9" cy="14.4" r="2.2" fill="#4fd8ff"/><circle cx="69.1" cy="13.5" r="2.2" fill="#4fd8ff"/><circle cx="75.4" cy="13.5" r="2.2" fill="#4fd8ff"/><circle cx="81.7" cy="17.7" r="2.2" fill="#4fd8ff"/><circle cx="88.0" cy="17.7" r="2.2" fill="#4fd8ff"/><circle cx="94.3" cy="16.2" r="2.2" fill="#4fd8ff"/><circle cx="100.6" cy="16.2" r="2.2" fill="#4fd8ff"/><circle cx="106.9" cy="15.0" r="2.2" fill="#4fd8ff"/><circle cx="113.1" cy="15.0" r="2.2" fill="#4fd8ff"/><circle cx="119.4" cy="15.0" r="2.2" fill="#4fd8ff"/><circle cx="125.7" cy="16.8" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="16.8" r="2.2" fill="#4fd8ff"/>
+  </svg><span>22 rounds</span></div>
+      <div class="quote"><b>Critic:</b> The reef eye and the grand-reef emitter now read; the flagship reaper does not - at 8x its eye is a gasket, its teeth are flat slabs, and at G/B 2.53 against water at 0.90 the animal sits outside its own medium.</div>
+      <div class="gap"><b>Biggest gap:</b> Creatures are chromatically detached from the water they swim in: head window 881,391,178,188 gbLin 2.532 vs its water 60,60,90,70 at 0.903 (2.80x), where reference creature-close-4 reads 0.770 vs 0.787 (0.98x). CN_FOG_SCALE=0.50 buys albedo authority by half-unfogging every creature.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/creatures-crit-r32/creature-close.png" alt="ours creature-close"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/creature-close-1.jpg" alt="reference creature-close"><span>Subnautica</span></div>
+        </div>
+        <figcaption>creature-close</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/creatures-crit-r32/grand-reef.png" alt="ours grand-reef"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/grand-reef-1.jpg" alt="reference grand-reef"><span>Subnautica</span></div>
+        </div>
+        <figcaption>grand-reef</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/creatures-crit-r32/motion-creature-close-00.png" alt="ours motion-creature-close-00"><span>ours</span></div>
+          
+        </div>
+        <figcaption>motion-creature-close-00</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#ff7ac6"></span>
+        <h3>Fish Schools</h3>
+        <span class="badge" style="color:#ff7ac6;border-color:#ff7ac644">Iterating</span>
+      </header>
+      <p class="desc">Flocking shoals, predator reactions</p>
+      <div class="meta"><code>src/life/schooling.js</code><span>round 2</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:56%;background:#ff7ac6"></i><b style="left:90%"></b></div>
+        <span class="num">56<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,8.4 L132.0,13.2" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="8.4" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="13.2" r="2.2" fill="#4fd8ff"/>
+  </svg><span>2 rounds</span></div>
+      <div class="quote"><b>Critic:</b> The midwater is populated and the predator beat genuinely reads, but at 1x the schools resolve as low-contrast grey pepper rather than fish: fish-only crops measure luminance range 69-101 / tile contrast 4.3-5.6 against school-1.jpg's 154 / 17.0, and in kelp-forest the module is net-negative, darkening 17.2% of the frame with a speckle slab.</div>
+      <div class="gap"><b>Biggest gap:</b> Contrast DISTRIBUTION, not density: our fish blobs have a peak/median contrast ratio of 1.65 (median 16, p90 27) where the reference school measures 6.3 (median 15, p90 97). Make ~5-10 percent of fish flash to +80..+120 luminance over local water while the rest dissolve toward it, and cut the 27-61m population (2000 of 3360 fish, all 2-4.5 px) that only contributes noise.</div>
+      
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Swim Feel</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Buoyancy, drag, momentum, camera feel</p>
+      <div class="meta"><code>src/player/movement.js</code><span>round 16</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:66%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">66<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,11.1 L8.3,9.6 L16.5,9.6 L24.8,11.7 L33.0,11.7 L41.3,7.2 L49.5,7.2 L57.8,8.4 L66.0,8.4 L74.3,8.1 L82.5,8.1 L90.8,12.6 L99.0,12.6 L107.3,9.6 L115.5,9.6 L123.8,10.2 L132.0,10.2" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="11.1" r="2.2" fill="#4fd8ff"/><circle cx="8.3" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="16.5" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="24.8" cy="11.7" r="2.2" fill="#4fd8ff"/><circle cx="33.0" cy="11.7" r="2.2" fill="#4fd8ff"/><circle cx="41.3" cy="7.2" r="2.2" fill="#4fd8ff"/><circle cx="49.5" cy="7.2" r="2.2" fill="#4fd8ff"/><circle cx="57.8" cy="8.4" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="8.4" r="2.2" fill="#4fd8ff"/><circle cx="74.3" cy="8.1" r="2.2" fill="#4fd8ff"/><circle cx="82.5" cy="8.1" r="2.2" fill="#4fd8ff"/><circle cx="90.8" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="99.0" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="107.3" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="115.5" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="123.8" cy="10.2" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="10.2" r="2.2" fill="#4fd8ff"/>
+  </svg><span>17 rounds</span></div>
+      <div class="quote"><b>Critic:</b> hullSlide is a real fix I reproduced bit-identically three times (Aurora hull, weld 7.267s -&gt; 0.017s, travel 1.49m -&gt; 27.33m) and the builder's refutation of the brief's _moveHorizontal attribution is correct, but blockNormal does nothing on an independent 48-face scan and the hull fix leaves the diver inside the wreck.</div>
+      <div class="gap"><b>Biggest gap:</b> hullSlide restores motion without depenetration: at aurora-stern bearing 0 r15 never enters the collision shell (min standoff 0.619m = colRadius, 0/120 frames inside) while r16 is inside on 98/120 with the body centre 15mm from a triangle - a lid traded for a ghost.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/movement-crit-r16/godrays.png" alt="ours godrays"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/godrays-1.jpg" alt="reference godrays"><span>Subnautica</span></div>
+        </div>
+        <figcaption>godrays</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/movement-crit-r16/hull-off-r15.png" alt="ours hull-off-r15"><span>ours</span></div>
+          
+        </div>
+        <figcaption>hull-off-r15</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/movement-crit-r16/hull-on-r16.png" alt="ours hull-on-r16"><span>ours</span></div>
+          
+        </div>
+        <figcaption>hull-on-r16</figcaption>
+      </figure></div>
+    </article>
+<article class="card won">
+      <header>
+        <span class="dot" style="background:#3ddc97"></span>
+        <h3>Survival</h3>
+        <span class="badge" style="color:#3ddc97;border-color:#3ddc9744">Beats reference</span>
+      </header>
+      <p class="desc">O2, food, water, health, pressure</p>
+      <div class="meta"><code>src/player/survival.js</code><span>round 9</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:74%;background:#3ddc97"></i><b style="left:90%"></b></div>
+        <span class="num">74<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,9.6 L66.0,7.8 L132.0,7.8" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="7.8" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="7.8" r="2.2" fill="#4fd8ff"/>
+  </svg><span>3 rounds</span></div>
+      <div class="quote"><b>Critic:</b> The loop finally has teeth and every number reproduces independently - crush kills at 7.5 HP/s on --route=deep (t=14.6s, respawn t=19.2s) and a quadratic 7.5-&gt;26 HP/s drown kills in 4.8s on --route=descend - but at 100m with a full tank the game is still completely silent, so the named '100m must be dangerous' defect closed only because the harness starts that route at 35% air.</div>
+      <div class="gap"><b>Biggest gap:</b> At 100m on a full 135-unit tank: pressureStress 0.000, crushRate 0.00, warnings [] - 77.7s of air against a 30.9s ascent, a 2.5x margin, and no rim because SUITS.none=200m puts the amber band at 144m. Worse, NO shot and NO play route ever enters that 144-200m warning band (deep starts at 280m, descend tops out at 99.8m), so the continuous-pressure redesign's entire middle is unmeasurable by any tool in the repo. Lower SUITS.none toward ~140m or make the ascent tax bite on a full tank, and add a route or shot that sits at 160m.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/survival-crit-r9/deep-void.png" alt="ours deep-void"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/deep-void-1.jpg" alt="reference deep-void"><span>Subnautica</span></div>
+        </div>
+        <figcaption>deep-void</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/survival-crit-r9/hud.png" alt="ours hud"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/hud-1.jpg" alt="reference hud"><span>Subnautica</span></div>
+        </div>
+        <figcaption>hud</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/survival-crit-r9/play-deep.png" alt="ours play-deep"><span>ours</span></div>
+          
+        </div>
+        <figcaption>play-deep</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Tools &amp; Scanning</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Scanner, flashlight, knife, inventory, crafting</p>
+      <div class="meta"><code>src/player/tools.js</code><span>round 34</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:41%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">41<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,11.4 L13.2,15.6 L26.4,12.6 L39.6,10.8 L52.8,10.2 L66.0,19.8 L79.2,19.8 L92.4,18.6 L105.6,18.6 L118.8,17.7 L132.0,17.7" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="13.2" cy="15.6" r="2.2" fill="#4fd8ff"/><circle cx="26.4" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="39.6" cy="10.8" r="2.2" fill="#4fd8ff"/><circle cx="52.8" cy="10.2" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="19.8" r="2.2" fill="#4fd8ff"/><circle cx="79.2" cy="19.8" r="2.2" fill="#4fd8ff"/><circle cx="92.4" cy="18.6" r="2.2" fill="#4fd8ff"/><circle cx="105.6" cy="18.6" r="2.2" fill="#4fd8ff"/><circle cx="118.8" cy="17.7" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="17.7" r="2.2" fill="#4fd8ff"/>
+  </svg><span>11 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Scanner genuinely repaired and the node's cause correctly ablated, but the module's own headline feature still lights nothing and two self-claims fail on the frames the builder captured.</div>
+      <div class="gap"><b>Biggest gap:</b> The flashlight casts no light: +0.31% on the cave floor and +1.33% on the night seabed at meter=0, against +134% on the tool's own head — the pass runs, at ~1/8 of a visible amplitude.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/tools-crit-r34/cave.png" alt="ours cave"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/cave-1.jpg" alt="reference cave"><span>Subnautica</span></div>
+        </div>
+        <figcaption>cave</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/tools-crit-r34/hud.png" alt="ours hud"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/hud-1.jpg" alt="reference hud"><span>Subnautica</span></div>
+        </div>
+        <figcaption>hud</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/tools-crit-r34/night-shallows.png" alt="ours night-shallows"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/night-shallows-1.jpg" alt="reference night-shallows"><span>Subnautica</span></div>
+        </div>
+        <figcaption>night-shallows</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Vehicles</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Seamoth, seaglide, cockpit, lights</p>
+      <div class="meta"><code>src/vehicles/vehicles.js</code><span>round 13</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:65%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">65<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,15.6 L9.4,12.6 L18.9,12.9 L28.3,12.6 L37.7,11.7 L47.1,12.3 L56.6,12.3 L66.0,11.4 L75.4,11.4 L84.9,10.8 L94.3,10.8 L103.7,11.1 L113.1,11.1 L122.6,10.5 L132.0,10.5" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="15.6" r="2.2" fill="#4fd8ff"/><circle cx="9.4" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="18.9" cy="12.9" r="2.2" fill="#4fd8ff"/><circle cx="28.3" cy="12.6" r="2.2" fill="#4fd8ff"/><circle cx="37.7" cy="11.7" r="2.2" fill="#4fd8ff"/><circle cx="47.1" cy="12.3" r="2.2" fill="#4fd8ff"/><circle cx="56.6" cy="12.3" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="75.4" cy="11.4" r="2.2" fill="#4fd8ff"/><circle cx="84.9" cy="10.8" r="2.2" fill="#4fd8ff"/><circle cx="94.3" cy="10.8" r="2.2" fill="#4fd8ff"/><circle cx="103.7" cy="11.1" r="2.2" fill="#4fd8ff"/><circle cx="113.1" cy="11.1" r="2.2" fill="#4fd8ff"/><circle cx="122.6" cy="10.5" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="10.5" r="2.2" fill="#4fd8ff"/>
+  </svg><span>15 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Every published number reproduces on my own captures and the named defect genuinely moved (crushed 6.19% -&gt; 2.34% over four boots, 2.317-2.399, against plates 0.015%/0.000%), and the postfx-AO root cause is proven by an ablation whose water control is byte-stable, but the shipped frame still shows two solid-black wedges across the inboard console faces, the interior midtones are still half the plate (p25 13.7 vs 29.7/26.8, median 34.6 vs 68.1/73.8), and the round never measured that DoF throws away 60% of the interior's own detail (MFD detailRMS 5.0-5.3 shipped vs 11.45 with DoF off vs the plate's 12.68).</div>
+      <div class="gap"><b>Biggest gap:</b> The dashboard's two largest surfaces are still literally RGB(0,0,0); mean absolute deviation from the two plates across p10/p25/median/p75/p90/p99 is 27.4%, i.e. back to round 11's 27.2% rather than past it, and the exterior hull still carries 1.7x the plate's tileContrast (30.8/31.6 vs 18.2) and 2.2x its detail with every octave 2.4-2.6x hot, so the surface non-negotiable is untouched.</div>
+      <div class="shots"><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/vehicles-crit-r13/grand-reef.png" alt="ours grand-reef"><span>ours</span></div>
+          <div class="half"><img loading="lazy" src="../reference/subnautica/grand-reef-1.jpg" alt="reference grand-reef"><span>Subnautica</span></div>
+        </div>
+        <figcaption>grand-reef</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/vehicles-crit-r13/motion-seamoth-cockpit-00.png" alt="ours motion-seamoth-cockpit-00"><span>ours</span></div>
+          
+        </div>
+        <figcaption>motion-seamoth-cockpit-00</figcaption>
+      </figure><figure class="cmp">
+        <div class="pair">
+          <div class="half"><img loading="lazy" src="../shots/vehicles-crit-r13/motion-seamoth-cockpit-01.png" alt="ours motion-seamoth-cockpit-01"><span>ours</span></div>
+          
+        </div>
+        <figcaption>motion-seamoth-cockpit-01</figcaption>
+      </figure></div>
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Seabase &amp; Interiors</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Corridors, rooms, observatory, hatches</p>
+      <div class="meta"><code>src/base/base.js</code><span>round 7</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:58%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">58<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,9.6 L66.0,13.5 L132.0,12.6" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="9.6" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="13.5" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="12.6" r="2.2" fill="#4fd8ff"/>
+  </svg><span>3 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Real, independently reproduced gains - the base is finally an air source (O2 held 75 to 75 over 12 simulated seconds inside the observatory), clipping is gone, and 48 compiled fragment programs genuinely carry the surface term - but the headline exterior surface number was measured across a crop containing 15+ schooling fish and a ray fin, and on fish-free plating detailRMS fell 15.83 to 9.12 against the reference's 18.39.</div>
+      <div class="gap"><b>Biggest gap:</b> The night hull is the biggest miss and the one claim that is measurably false. On the base's own crop ours reads median 15.1 / p99 32.4 / detailRMS 3.09 / tileContrast 2.86 against night-shallows-1's base at 49.2 / 133.3 / 18.99 / 15.67: the real night habitat is 3.3x brighter in the body, 6x more detailed, and covered in lit window bands and cyan LED strakes, while ours is a near-black smudge. HULL_DEPTH_RESPONSE 0.34 plus exteriorShade cured the daylight ghost by deleting the night.</div>
+      
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>HUD &amp; PDA</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">O2/health bars, depth, PDA, scanner UI</p>
+      <div class="meta"><code>src/ui/ui.js</code><span>round 6</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:71%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">71<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,7.2 L66.0,10.2 L132.0,8.7" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="7.2" r="2.2" fill="#4fd8ff"/><circle cx="66.0" cy="10.2" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="8.7" r="2.2" fill="#4fd8ff"/>
+  </svg><span>3 rounds</span></div>
+      <div class="quote"><b>Critic:</b> Three of the four assigned defects are genuinely fixed and better evidenced than anything else in this repo — the setState latch provably refuses tools.js's openPDA, the marker cull drops labels 7 to 0 and reverts to within 1% when switched off, and the 280m/680m warning bleed no longer reproduces in the exact grand-reef to deep-void order — but the PDA glass only got halfway to hud-4.jpg and the blind trial was still 4/4.</div>
+      <div class="gap"><b>Biggest gap:</b> The HUD's shape language, not its behaviour, is what gives it away: the vitals cluster trails two connector hairlines that end in near-invisible anchor dots on an element the reference never wires at all, the vehicle readout is three identical stacked parallelograms where seamoth-cockpit-1 has one two-cell asymmetric sheet (wrench+bolt sharing a row, temperature hooked below), and the depth bracket is a filled navy bowl measuring detailRMS 43.4 / sat 0.85 against the reference arc's 13.6 / 0.55.</div>
+      
+    </article>
+<article class="card ">
+      <header>
+        <span class="dot" style="background:#7b8cff"></span>
+        <h3>Audio</h3>
+        <span class="badge" style="color:#7b8cff;border-color:#7b8cff44">Under review</span>
+      </header>
+      <p class="desc">Biome beds, muffling, creature calls</p>
+      <div class="meta"><code>src/audio/audio.js</code><span>round 2</span></div>
+      <div class="score">
+        <div class="bar"><i style="width:65%;background:#7b8cff"></i><b style="left:90%"></b></div>
+        <span class="num">65<em>/100 vs Subnautica</em></span>
+      </div>
+      <div class="hist"><svg class="spark" viewBox="0 0 132 30" width="132" height="30" aria-hidden="true">
+    <line x1="0" y1="3" x2="132" y2="3" stroke="#3ddc9733" stroke-dasharray="3 3"/>
+    <path d="M0.0,8.4 L132.0,10.5" fill="none" stroke="#4fd8ff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="0.0" cy="8.4" r="2.2" fill="#4fd8ff"/><circle cx="132.0" cy="10.5" r="2.2" fill="#4fd8ff"/>
+  </svg><span>2 rounds</span></div>
+      <div class="quote"><b>Critic:</b> A measurably real, click-free biome soundscape (156 Hz in the abyss to 7011 Hz in air; waterline 448 to 7629 Hz in 1.2 s) wrapped around a game that never calls it: no module invokes ctx.get('audio'), so scanning, harvesting, crafting, pickups and the PDA are all silent while ui.js's private AudioContext plays square-wave beeps past the limiter, muffle and mute key.</div>
+      <div class="gap"><b>Biggest gap:</b> The leviathan roar is inaudible exactly where it matters. Stereo-summed tap of the live master, 3 roars per site: Safe Shallows 12 m = +5.5/+6.7/+6.3 dB RMS (+8.4/+8.9/+8.1 dB peak) over a -24.6 dB bed, but Grand Reef 280 m = -0.9/-0.4/-3.7 dB over a -13.2 dB bed and Lost River 678 m = +0.1/+0.4/-1.3 dB over a -14.1 dB bed. Deep beds run 11 dB hotter than the shallows, the limiter already pins peaks at -5.0 to -5.4 dBFS in every biome, and spec.duck (0.34-0.38 over 2.2-2.6 s) is recovering before the call's 0.8-1.6 s attack peaks. Cut grand-reef-deep 1.0-&gt;0.45, lost-river-hollow 0.95-&gt;0.45, blood-kelp-dread 1.0-&gt;0.45, void-abyss 0.85-&gt;0.40, WATER.bellDeep +9.5-&gt;+4 dB, pressure drone 0.24-&gt;0.10 to land the deep bed near the shallows' -22 dB, and deepen the leviathan duck to ~0.12 held to t+dur*0.35, released over dur+1.5 s. Target &gt;=+6 dB RMS and &gt;=+8 dB peak at 280 m and 678 m. Same pass: gate the unprompted roar on hostility (safe_shallows is 0.05 and currently gets a reaper every ~158 s).</div>
+      
+    </article></div>
+<div class="notes"><h2>Build log</h2><ul><li><time>6:33:12 PM</time>flora r33: the flat unlit cyan/magenta blobs in the grass are tools.js resource nodes (podMat emissive 1.6 x vColor^2), not flora — proven by hiding scene.children[13] tools.nodes. Grass rebuilt on blade() with twist + foot; near-black pixels in a fixed 900x700 window 698 -&gt; 143.</li><li><time>6:31:42 PM</time>watersurface r33: Snell rim band-limited (fwidth + facet slope + scatter cone in quadrature); the round-32 glitter lattice does not reproduce from this tree — see the header.</li><li><time>5:14:25 PM</time>Round 32: 14/14 on the fair-plate subset. Round 13 was 18/18 including four unjudgeable pairs; removing them changed nothing, so the leak was never the pairing. 12 of 14 decided in about a second WITHOUT magnification. Category tally: water surface 4 (most of any), material 4, water medium 2 (back from 0 after nine rounds of medium work), content 1, silhouette 1, UI 1, emitter 1. New concrete bugs: a hard black/cyan BINARY surface mask with no intermediate values; sun glitter as a regular orthogonal lattice; grass cards rendering pure black or pure MAGENTA (two-sided lighting); fish and base as unlit black cutouts at night. The fps collapse it reported (kelp 21.0) was GPU contention - reproduces at 149.1 idle.</li><li><time>4:35:17 PM</time>creatures r32: the eye ignored albedo because the environment-mirror gate was on the wrong half of the ball (cornea only); sclera+socket floor carried the full lobe. Reef lens 0.79 -&gt; 11.29 median (ref 17.72), lens/cheek 0.029 -&gt; 0.404 (ref 0.394). Reaper eye p99 217 -&gt; 73, wash removed. capture.mjs is BISTABLE: 3 isolated runs of one unmodified build gave whole-frame median 53.09 / 69.68 / 52.72 - screen every frame before quoting it.</li><li><time>12:25:43 PM</time>underwater r31: uGainChroma ablated with a new ?uwGainChroma=0 override (uwSkyAtten=0 could not isolate it). Its whole contribution to level-dependent hue is &lt;=0.11 points of a 3-73 point signal and flips sign between window sets; it only adds 0.1-0.7 relative red. Also: G/B-vs-level on 8-bit pixels is a transfer-curve statistic, and godrays-1's own pure water reads -4.2 to +7.0 %/octave in linear depending only on window choice. Medium unchanged.</li><li><time>10:24:10 AM</time>underwater r30: the reference water is ONE chromaticity. godrays-1 pure water (5 verified windows, 0% clipping in every channel) holds G/B 1.063-1.104, R% 0.07-0.19, sat 0.998-0.999 across p90 92.5-149.3. Ours holds G/B 0.779-0.857, R% 6.85-9.55, sat 0.932-0.905 across p90 108-172 - MORE drift, already in the direction the brief asked for. Round 30's top data point is a 98.6%-green-clipped window; measure.mjs's clipPct cannot see per-channel clipping.</li><li><time>8:49:54 AM</time>postfx r29: ACES_OUT*ACES_IN is not a round trip (red row picks up 7.675% of green); the curve manufactured up to 130 counts of display red out of a scene red of exactly zero, but only above scene-linear 0.42-0.55. Per-channel ceiling at the scene's channel ratios shipped (?aceshue=0 restores r28). Retracting round 28 item 9(b): its kelp plate window is 71.6% clipped.</li><li><time>7:22:30 AM</time>Round 28: biomes fixed both water-window defects by derivation - grand-reef ambientFloor 0.300-&gt;0.092 (the table asserted half of surface daylight survives to 280m), landing 0.7% and 0.05% off the plate; kelp green unpinned from 249/255 via a new level field. It refused part of the brief with proof: 91% of kelp's fog-blue is a Safe Shallows BLEND LEAK, not biomes' to set. Core fix from its report: uwInscatter's min() clamp gave the up-look a KNEE, flattening 28% of frame height to G 249.1/249.8/249.8; soft-clamped, now 240/234/217. Also flagged: postfx's tonemapper MANUFACTURES red on near-clipped windows - R% 37 measured where the medium's red was 0.00004.</li><li><time>3:45:48 AM</time>Round 27: underwater REFUSED the grand-reef recovery and proved it unphysical. On water-only windows the shipped ramp already matches the plate (1.109 vs 1.098 vertical, octave tilt 0.70 vs 0.69); k=3.32 gives 'correct average, no correct pixel'. Horizon invariance measured not argued: gain(rd.y=0)=1 by construction and the band straddling the horizon reads 48-50 at BOTH k values, so k cannot move that median at all. And deep-void-2 has NO clean water window - its one candidate has larger horizontal spread (1.65) than vertical (1.39) because it is a lit cave mouth plus a lamp. Two rounds were spent on targets from it. Fifth builder refusal, fifth vindication.</li><li><time>12:29:20 AM</time>Round 26: THE TARGET WAS INVALID. deep-void-2's topBottom 0.54 is an opaque rock ceiling plus HUD (12.4% of pixels) plus a biolum stalk - masking HUD alone moves it to 0.956, and the WATER ONLY gets darker downward at ratio 1.4, the SAME direction ours already produces. PLATES.md already forbade whole-frame stats from HUD-carrying plates. I wrote the target anyway and spent a round on it. underwater refused to invert its elevation term and was right, from LOOK.md not the plate. postfx 64-&gt;70, underwater 72-&gt;68; grand-reef lost all three exact axes.</li><li><time>9:45:54 PM</time>Round 25: underwater 72, postfx 64 - best yet for both. The graded sum now lands on 8 of 20 shot-by-axis cells vs the raw medium's 6. postfx shipped ONE change and deliberately refused three others where its stage was already correct. It also found a bug in MY round-22 warm-up fix: the reload was skipped for shot #1, so position 1 of every battery was measured on a page that had already rendered it - kelp-forest read 49.3 at position 1 vs 28.4 at position 2. Fixed. New gap: deep-void's vertical structure is INVERTED and neither builder named it.</li><li><time>7:18:17 PM</time>Round 24: postfx 40-&gt;62, the fight is over. Grade delta went from a one-sided push (+0.279 sat, -25 R% on grand-reef) to scatter about zero. grand-reef now EXACT on all three axes: 34.2/0.457/58 vs plate 34.0/0.461/56. deep-void flat black closed 4.87%-&gt;0.48% vs plate 0.60%. The named lever reached only 30% - the real culprit was the ACES tone curve, which no knob could reach, and a chroma-recovery gate quoted in absolute scene-linear that never fired below 280m. Two more of MY plate columns were wrong: cave used a non-primary plate, shallows-floor used a level target PLATES.md forbids.</li><li><time>6:50:22 PM</time>postfx r24: measured the graded-vs-ungraded delta on a HUD-free crop and stopped it. The chain was adding +0.076..+0.279 saturation and removing 1-25 relative red on all five shots; it is now -0.057..+0.053. Attribution needed six new ablation knobs (?vib ?crec ?crlo ?gfar ?gnear ?cgamma) because ?zonesat reached only 30% of it - the biggest single contributor was the ACES curve (+0.115 sat / -22 R%), whose answer, chroma recovery, measured exactly 0.000 because its ramp-in band was absolute scene-linear and every deep frame lives below it.</li><li><time>5:15:07 PM</time>underwater r24: published the ungraded (?nopostfx=1) baseline for grand-reef/cave/kelp-forest/deep-void, bit-identical across two isolated runs. Ungraded the medium sits on its plates (grand-reef sat 0.509/R% 50 vs 0.543/47; cave 0.714/77 vs cave-1's 0.717/67; deep-void 0.758/26 vs 0.791/20). The grade then adds 23-56% saturation and removes 54-69% of relative red on the two deep shots. Refuted the grand-reef G/B cost: ablating hueRelease moves ungraded G/B by -1.4%..+1.1% on 8 windows and graded G/B by 8.6%..41.5% - the ratio move is made downstream, not here. Added ?uwHueRelease / ?uwWarmRelease so both choices can be ablated from the harness.</li></ul></div>
+<footer>updated 8/28/2026, 8:01:05 PM · started 8/15/2026, 5:58:50 PM</footer>
+</div></body></html>

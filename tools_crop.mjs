@@ -1,0 +1,22 @@
+import { chromium } from 'playwright';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+const [src, out, cropS, scaleS] = process.argv.slice(2);
+const cr = cropS.split(',').map(Number);
+const scale = Number(scaleS || 1);
+const b = await chromium.launch({ headless: true, channel: 'chrome' });
+const p = await b.newPage();
+await p.goto('about:blank');
+const ext = path.extname(src).toLowerCase();
+const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+const url = `data:${mime};base64,${(await readFile(src)).toString('base64')}`;
+const dataUrl = await p.evaluate(async ({ src, cr, scale }) => {
+  const img = new Image(); img.src = src; await img.decode();
+  const sx = Math.floor(cr[0]*img.naturalWidth), sy = Math.floor(cr[1]*img.naturalHeight);
+  const sw = Math.floor((cr[2]-cr[0])*img.naturalWidth), sh = Math.floor((cr[3]-cr[1])*img.naturalHeight);
+  const c = document.createElement('canvas'); c.width = Math.round(sw*scale); c.height = Math.round(sh*scale);
+  const g = c.getContext('2d'); g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return c.toDataURL('image/png');
+}, { src: url, cr, scale });
+await writeFile(out, Buffer.from(dataUrl.split(',')[1], 'base64'));
+await b.close();

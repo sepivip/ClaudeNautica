@@ -1,0 +1,1774 @@
+{
+  "startedAt": "2026-08-15T13:58:50.021Z",
+  "updatedAt": "2026-08-28T16:01:05.446Z",
+  "notes": [
+    {
+      "ts": "2026-08-15T13:58:50.022Z",
+      "text": "Foundation online: engine, shared underwater shading, GPU capture harness, 17 module seams"
+    },
+    {
+      "ts": "2026-08-15T13:59:54.347Z",
+      "text": "lock test"
+    },
+    {
+      "ts": "2026-08-15T14:04:00.155Z",
+      "text": "Wave 1 dispatched: biomes, terrain, underwater, watersurface, sky, postfx — build then adversarial critique"
+    },
+    {
+      "ts": "2026-08-15T14:09:40.365Z",
+      "text": "biomes: deriving per-biome absorption from Jerlov Kd + writing the blend engine"
+    },
+    {
+      "ts": "2026-08-15T14:22:00.679Z",
+      "text": "Reference battery: 58 real Subnautica frames + measured LOOK.md spec (pixel-sampled colour ramp, visibility, caustics, HUD). Core absorption corrected to the measured green-dominant mid-water."
+    },
+    {
+      "ts": "2026-08-15T14:23:44.067Z",
+      "text": "Added motion contact-sheet and scripted-playthrough harnesses so critics can judge movement and feel, not just stills"
+    },
+    {
+      "ts": "2026-08-15T14:25:38.995Z",
+      "text": "terrain: radial shelf/cliff/abyss profile + terraces, ridged reef spines, crevasses, landmark craters/mesas/pinnacles; quadtree LOD chunks with skirts; triplanar sand/rock/coral shader"
+    },
+    {
+      "ts": "2026-08-15T14:30:21.265Z",
+      "text": "biomes: 14 biomes live. absorption from Jerlov Kd^0.72 scaled by visibility (T_blue=e^-1.85 at maxVisibility). at()/atDepth()/groundAt()/floorDepthAt()/spawnTableAt() exported; drives U.* as a fallback only while underwater.js is a stub"
+    },
+    {
+      "ts": "2026-08-15T14:34:27.674Z",
+      "text": "biomes: found+fixed terrain handoff break (terrain reads biome.palette, we had biome.terrain) and 3 terrain biome ids that resolved to undefined; groundAt/floorDepthAt now defer to terrain as the ground authority"
+    },
+    {
+      "ts": "2026-08-15T15:26:44.487Z",
+      "text": "terrain: r29 - biomes.js palettes+site layout wired in, horizon-sweep AO, screen-space (fwidth) detail LOD with analytic ripple AA, rounded ridge crests per LOOK.md 7"
+    },
+    {
+      "ts": "2026-08-15T15:27:59.572Z",
+      "text": "terrain: final r29/terrain-final - 1386-3218fps @1080p, <=68 draws, <=501k tris, all 18 shot cameras clear the floor"
+    },
+    {
+      "ts": "2026-08-15T15:45:12.565Z",
+      "text": "sky: building physical Rayleigh+Mie atmosphere (transmittance + skyview LUTs), raymarched volumetric clouds, sun/moon/gas-giant/starfield, day-night light publishing"
+    },
+    {
+      "ts": "2026-08-15T15:45:40.069Z",
+      "text": "Core fix: fallback sun/hemi/background when sky.js is still a stub — modules were being judged with no light source at all. Terrain now shows ripples+caustics."
+    },
+    {
+      "ts": "2026-08-15T16:11:57.319Z",
+      "text": "postfx: HDR chain online — TAA (depth reproject + YCoCg variance clip), COD progressive bloom, SSAO, signed-CoC DoF, hue-preserving filmic curve + depth-weighted grade"
+    },
+    {
+      "ts": "2026-08-15T16:15:31.480Z",
+      "text": "postfx r1: filmic hue-preserving curve (AgX measured 25% dark + desaturated vs the reference, kept behind ?tonemap=agx); depth-weighted clarity grade; TAA verified no-ghost on moving emitters; 482-651fps @1080p, 77-91 draws"
+    },
+    {
+      "ts": "2026-08-15T16:36:18.460Z",
+      "text": "postfx r2: fixing the red-clamp (toe + vibrance now luminance/chroma-safe), real highlight tail, no lavender sun, CA/barrel off, vignette cut, real unsharp clarity"
+    },
+    {
+      "ts": "2026-08-15T16:43:46.650Z",
+      "text": "biomes r2: open column now goes cyan-blue -> GREEN-TEAL (G/B 1.17 at ~215m, was 0.71) -> navy; visibility halved to LOOK.md bands (50/35/30/18/13); Dunes repainted warm tan-brown on a flat Mie medium; red bounded so it dies by depth not by turbidity"
+    },
+    {
+      "ts": "2026-08-15T16:44:36.827Z",
+      "text": "underwater: medium uniforms eased from biomes, integrated water-volume backdrop, raymarched god rays with a sun-space occlusion map, GPU caustic net, marine snow + bubbles"
+    },
+    {
+      "ts": "2026-08-15T16:48:55.637Z",
+      "text": "underwater r1: fixed the depth prepass leaking sky/water-surface quads (was deleting every god ray); shafts now measure +11% over background, matching LOOK.md"
+    },
+    {
+      "ts": "2026-08-15T16:50:04.162Z",
+      "text": "watersurface r1: Gerstner ocean disc (1 draw, 262k tris, 500-830fps @1080p); exact dielectric Fresnel gives Snell's window + TIR from below; seabed refraction ray-marched off a baked terrain depth map; waterline crossing wipe + U.uUnderwater/uWaterLevel ownership"
+    },
+    {
+      "ts": "2026-08-15T16:50:29.225Z",
+      "text": "watersurface: motion sheets in shots/watersurface-motion (Snell's window rise, both waterline crossings, wave motion)"
+    },
+    {
+      "ts": "2026-08-15T16:53:56.031Z",
+      "text": "sky: physical Rayleigh+Mie+ozone atmosphere via transmittance + sky-view LUTs, raymarched volumetric clouds, limb-darkened sun, phase-lit moon, banded gas giant, alien starfield; publishes the key light (sun->moon) + hemisphere ambient + sky env cube; folds day/night into the shared medium since biomes/underwater are daylight-only. 840fps @1080p, 85 draws"
+    },
+    {
+      "ts": "2026-08-15T16:55:45.963Z",
+      "text": "sky: r9 - steepened Rayleigh ratio for sky saturation; final 1280x720 + 1080p captures clean, 535-840fps, 76-85 draws"
+    },
+    {
+      "ts": "2026-08-15T16:57:56.855Z",
+      "text": "terrain r2: instanced 0.2-3m cobble field with flush-rim bedding + contact aprons; shallows raised to 20-26m so the floor is lit; drop-off is now an 80-86deg wall 24m in front of the dropoff camera; ripples de-contoured and 3x stronger; strata are banded not lined"
+    },
+    {
+      "ts": "2026-08-15T17:03:07.256Z",
+      "text": "postfx r2: red no longer clipped (ratio-only grade), per-channel shoulder reaching white, lift removed, CA/barrel off, vignette 0.045, real unsharp clarity"
+    },
+    {
+      "ts": "2026-08-15T17:06:50.666Z",
+      "text": "underwater r2: rebuilding in-scatter as a per-pixel ray integral (screen-space medium pass) instead of a per-frame constant"
+    },
+    {
+      "ts": "2026-08-15T17:08:58.386Z",
+      "text": "postfx r2 verified: shallows open water #009DCC -> #4BBBE6 (ref #42BAF3); mean R 0.1 -> 69; sat 0.999 -> 0.675 (ref 0.734); sun [143,194,255] periwinkle -> [112,255,255] cyan-white; deep-void floor lum 10 -> 1; CA/barrel off; vignette 0.24 -> 0.045"
+    },
+    {
+      "ts": "2026-08-15T17:13:53.686Z",
+      "text": "Independent critics: terrain 58(self)->35, biomes 43->58. Blind detection 100%. Root cause: NO shadows anywhere (occlusion is ~90% of seabed signal). Core now enables shadows game-wide; deep-void/cave shot framings were aimed at empty water — fixed via terrain probe."
+    },
+    {
+      "ts": "2026-08-15T17:27:22.750Z",
+      "text": "sky r2: cloud radiance now gets the sky-view LUT as ambient (shadow side), far-deck fade for the horizon blue band, Rayleigh amplitude up in G/B, gas giant rebuilt, per-channel night gain, blue-noise dither"
+    },
+    {
+      "ts": "2026-08-15T18:00:10.963Z",
+      "text": "underwater r2: in-scatter is now a per-pixel ray integral (screen-space medium pass, signed One/One into the HDR target, cancels core's constant exactly). godrays strip 1.01:1 -> 1.25:1, shallows-reef 1.33 -> 1.60, p0.1 floor 131 -> 71. Absorption reshaped (a=0.20/0.044/0.032, vis 58m); deep no longer bottoms out (grand-reef median 0 -> 27); marine snow 6 -> 220 specks."
+    },
+    {
+      "ts": "2026-08-15T18:00:55.480Z",
+      "text": "biomes r3: rebuilt the derivation as Kd DIFFERENCES over a flat particulate level (visibility sets range, Jerlov margins set hue) and pre-compensated every hex for underwater.js's depth tint - the column now measures G/B 0.80@15m -> 1.09@155m -> 0.68@345m against LOOK.md's 0.78/1.09/0.64; grand_reef 280m lum 5 -> 29; 950m cold key added; Dunes/Jellyshroom red blocked by underwater.js redRatio"
+    },
+    {
+      "ts": "2026-08-15T18:01:27.258Z",
+      "text": "watersurface r2: swapped the inverted body tint (red-crushing / blue-preserving), killed the seabed leak, real whitecaps, broad glitter path, and a sun-from-below that is now the brightest thing in frame"
+    },
+    {
+      "ts": "2026-08-15T18:08:30.320Z",
+      "text": "watersurface r2: sea measures hue 188 sat 0.6 (was 137/0.13); foam 2.7% coverage; sun-from-below is now the brightest thing in the looking-up frame; near-field detail no longer falls toward the camera"
+    },
+    {
+      "ts": "2026-08-15T18:10:04.896Z",
+      "text": "sky r2: cloud radiance now takes the sky-view LUT as its ambient, so cumulus have a sky-coloured shadow side (crown 243 / base 150, monotonic) and nothing clips — surface-pod p99 230 vs reference 230, 0 pixels at 255"
+    },
+    {
+      "ts": "2026-08-15T18:10:05.007Z",
+      "text": "sky r2: far-deck fade restores the clear blue band above the waterline; weather map made tileable (killed a vertical seam slicing clouds); blue-noise march offset replaces the IGN hex screen; night is now a per-channel grade after underwater's medium pass — open water rgb(15,35,71) vs reference rgb(15,39,75)"
+    },
+    {
+      "ts": "2026-08-15T18:33:34.050Z",
+      "text": "Wave 1 done: underwater 28->42, watersurface 35->43, sky 40->46, postfx 34->39. All critics converged on ONE root cause: no vertical/distance axis. Core fixed — analytic depth-integrated single scattering, now a shared GLSL fn both render paths call. Added tools/measure.mjs so improvement is provable."
+    },
+    {
+      "ts": "2026-08-15T18:33:57.986Z",
+      "text": "terrain r3: real occlusion everywhere — per-vertex 8-azimuth horizon baked as a Fourier series gives true sun cast shadows; anisotropic detail LOD; cobble capsule contact shadows; caustics now occluded and albedo-weighted"
+    },
+    {
+      "ts": "2026-08-15T18:49:50.874Z",
+      "text": "structures: building lifepod, wreck field, jellyshroom cavern, arches"
+    },
+    {
+      "ts": "2026-08-15T18:52:12.357Z",
+      "text": "measure.mjs was downscaling to 1280 before the laplacian, inflating detail scores — now native-res with --crop. Horizon seam traced to core: fallback background painted raw uFogColor while the medium's far-field is mix(fog,scatter,strength). Fixed."
+    },
+    {
+      "ts": "2026-08-15T19:29:11.196Z",
+      "text": "watersurface r3: waterColumn() now calls core uwInscatter/uwTransmittance with the real refracted ray and real path length - godrays range 70.5->163.9 and tile contrast 1.48->7.31 over the same frame with ?nowater, at an unchanged median"
+    },
+    {
+      "ts": "2026-08-15T19:45:35.352Z",
+      "text": "flora: seabed dressed — 500 creepvines + 5.8k grass clumps in the kelp shot, travelling-wave sway (lambda 19m, 5 m/s), bioluminescent ground light pools; 103-117fps @1600x900, 189-326 draws, 0 console errors"
+    },
+    {
+      "ts": "2026-08-15T19:49:33.238Z",
+      "text": "schooling: flank-flash shimmer + sub-pixel coverage dissolve; module now costs ~0ms (152.8fps with = 152.8fps without at 1080p)"
+    },
+    {
+      "ts": "2026-08-15T19:52:09.925Z",
+      "text": "sky r3: cloud deck relit sun-dominant (CLOUD_SUN_K 0.115->0.185, ambient dome 1.0->0.30/0.46 + a neutral multiple-scattering floor) - sky band p90 225->169 vs reference 177, cloud B-R 79-95 -> 24-60; gas giant now composites as an opaque occluder (night side L48 under a sky of L80, terminator 3.1:1, rim term deleted); night key light 0.063->0.61, 3-magnitude starfield, bright phase-lit moon, NIGHT_MUL retuned to the reference water level (L38 vs 35)."
+    },
+    {
+      "ts": "2026-08-15T19:53:34.225Z",
+      "text": "creatures: procedural bodies + travelling-wave undulation; found and fixed an unbounded mouth mask and the missing water-as-arealight term that rendered every creature as a black cut-out"
+    },
+    {
+      "ts": "2026-08-15T20:03:36.940Z",
+      "text": "underwater r3: fullscreen water column now calls core uwInscatter/uwTransmittance, godrays are a 14% modulation of the pixel's own in-scatter with signed terrain shadow, marine snow red-killed and spectrally re-tinted"
+    },
+    {
+      "ts": "2026-08-15T20:07:36.056Z",
+      "text": "postfx r3: tools/capture.mjs ignores --params, so every ?nopostfx=1 / ?pfxdebug= A/B run through it silently captured the default build"
+    },
+    {
+      "ts": "2026-08-15T20:07:42.293Z",
+      "text": "postfx r3: raw HDR buffer measures p0.1=0.078 / p99.9=0.567 linear via ?nopostfx=1 - under 3 stops, so no grade can create true highlights or the 51:1 vertical ratio"
+    },
+    {
+      "ts": "2026-08-15T20:09:32.008Z",
+      "text": "structures: FOUND CORE BUG — underwaterMaterial vUwWorldPos ignores instanceMatrix, so every InstancedMesh in the game is fogged/darkened from the world origin"
+    },
+    {
+      "ts": "2026-08-15T20:21:34.902Z",
+      "text": "schooling r2: flank flash rebuilt as a rare/blinding per-fish mirror driven by idle sculling roll; far bands halved; accent minority; kelp de-peppered"
+    },
+    {
+      "ts": "2026-08-15T20:55:18.865Z",
+      "text": "flora r2: creepvine now silhouettes — near-vine crop floor 73->0, median 96.8->35 against water 121 (1.19:1 -> 3.45:1); per-species fill kills ambient/wrap/sheen on the vines; rope profile with 0.7-1.0m hooked barbs; pods clip at 253.8 (ref 248) with bloom; cave jellyshrooms 73 -> 794 lit caps; ground cover 4227 -> 21400 instances"
+    },
+    {
+      "ts": "2026-08-15T21:05:10.641Z",
+      "text": "schooling r2: flank flash rebuilt (rolled flank + idle sculling roll, narrow lobe) -> fish-crop p90 blob contrast 24.9->78, ratio 1.62->3.2; far bands halved (3360->2167 fish); kelp de-peppered 2755->375 fish, darkening 17.2%->10.9%; hero staged at 8.9m centre-frame, panic 0.60->0.02"
+    },
+    {
+      "ts": "2026-08-15T21:28:04.049Z",
+      "text": "creatures r2: real BRDF (uwInscatter ambient + GGX + env mirror), eye orbits cut into the loft, curved jaw mask with tooth row, radial 13->26 on sub-2m species, filleted/rounded/capped fins, catenary jelly tentacles, segmented reaper ridge + mandibles + teeth, composed deep bioluminescent grand-reef (19 alive / 9 on-screen / 9 legible vs 12/5/4)"
+    },
+    {
+      "ts": "2026-08-15T21:31:29.207Z",
+      "text": "structures r2: lamps were mounted INSIDE a closed FrontSide hull, so 12k candela lit nothing — moved onto derricks raking the plating. wreck bright% 2.1->23.1, hull-crop median 16.2->42.6, hueSpread 3.5->26.2, p99.9 103->229."
+    },
+    {
+      "ts": "2026-08-15T21:45:06.701Z",
+      "text": "THREE core bugs found by agents and fixed: (1) applyUnderwater ignored instanceMatrix so all flora/fish/schools fogged from instance zero's position; (2) emissive was dimmed as if sunlit (x35 at 200m) which killed all bioluminescence and kept structures below bloom threshold; (3) up-look gain tinted toward the most-absorbed channel. Kelp forest now reads as a real biome."
+    },
+    {
+      "ts": "2026-08-15T21:48:24.475Z",
+      "text": "audio: synthesising per-biome ambient beds, waterline muffling, leviathan calls, breathing/heartbeat, UI stings"
+    },
+    {
+      "ts": "2026-08-15T21:56:07.152Z",
+      "text": "survival: starting the O2/food/water/health/pressure loop (movement + ui are still stubs; building against guarded fallbacks)"
+    },
+    {
+      "ts": "2026-08-15T21:58:55.568Z",
+      "text": "tools: building scanner/flashlight/knife/inventory/fabricator/beacons — deferred lamp cone off the shared medium model"
+    },
+    {
+      "ts": "2026-08-15T23:38:48.808Z",
+      "text": "survival: O2 = 95s at the surface, 54s at 30m, 34s at 100m, 23s at 250m; drowning is 6.6s from full health; respawn costs 38 HP, 28 food, 32 water"
+    },
+    {
+      "ts": "2026-08-15T23:47:54.811Z",
+      "text": "base: observatory + 2 stacked rooms on auto-generated pylons; per-vertex interior light bake injected into totalEmissiveRadiance so habitat lamps survive uDepthDarken; builder ghost/snap/costs verified through the real input path"
+    },
+    {
+      "ts": "2026-08-15T23:50:34.530Z",
+      "text": "movement: real swim physics + camera feel; found and worked around a vehicles.js per-frame camera.fov write that was zeroing player velocity every frame"
+    },
+    {
+      "ts": "2026-08-16T00:14:00.968Z",
+      "text": "ui: HUD/PDA measured off hud-1/hud-4/seamoth-cockpit-2. NOTE: player/tools.js also builds a HUD+PDA (#cn-tl) in ctx.uiRoot - ui.js now stands its reticle/slots/chips/markers/Tab down to avoid a doubled HUD. ?uihud=full shows both."
+    },
+    {
+      "ts": "2026-08-16T00:28:46.793Z",
+      "text": "tools: deferred lamp cone (reads underwater.js depth prepass, calls uwTransmittance) lights terrain+flora that a THREE.SpotLight cannot reach; scanner->PDA databank wired into ui.js; seaglide handed to vehicles.js via their handshake"
+    },
+    {
+      "ts": "2026-08-16T00:33:06.749Z",
+      "text": "tools: fabricator mounted on the lifepod flank; 4 play routes travel 34-72m with no failed modules"
+    },
+    {
+      "ts": "2026-08-16T00:38:19.719Z",
+      "text": "audio: 16 biome beds (centroid 48Hz abyss -> 1365Hz surface), waterline opens the muffle 9.8x with +62.8dB of air band, roar ducks the bed 6.7dB; killed a whole-mix dropout caused by disconnecting nodes mid-render"
+    },
+    {
+      "ts": "2026-08-16T00:46:08.087Z",
+      "text": "vehicles: Seamoth pilots end-to-end (E to dock, WASD+mouse, banking, crush depth, solar recharge); Seaglide propels through movement.impulse and stows when tools.js has a hand tool out"
+    },
+    {
+      "ts": "2026-08-16T01:26:56.414Z",
+      "text": "survival r2: O2 tank recalibrated to the reference (45 s surface / 225 s ultra, both readable in the real frames); ring and number now agree to within 5% on pixels (was 6.2x); warnings ranked by lethality; post-death i-frames 4.8s -> 2.0s; respawn lands on the waterline; exhale 7.5 -> 37 live bubbles"
+    },
+    {
+      "ts": "2026-08-16T01:32:57.533Z",
+      "text": "movement r2: surface waterline strobe eliminated — 0 crossings in a 10s float (was 6) and a 15s surface swim (was 14), eye-minus-wave min +0.386/+0.331 m vs -0.171/-0.132; fin-kick surge now in the body (14% speed ripple, was 0.007%); camera lag is acceleration-driven (0.042 m at cruise, was a fixed 0.190 m); roll 7.7 deg (was 3.0)"
+    },
+    {
+      "ts": "2026-08-16T01:37:06.424Z",
+      "text": "survival r2 verified: depth ladder 45s surface / 32.9s at 30m / 23.8s at 100m / 19.2s at 250m / 14.9s at 680m; ring-vs-number ratio 0.998-1.003 across 10 rungs and 0.95-1.03 on pixels; stalker bite lands 12.7 HP where it previously landed 0"
+    },
+    {
+      "ts": "2026-08-16T02:20:59.723Z",
+      "text": "ui r2: vitals halo is now a 0.72 multiply (measured, was unmeasurable); depth bowl navy fill + near-white bracket stroke at dLum +190 (was +19); compass ticks +91 (was +25); O2 glass lifted to lum 75-98 (was 42-56); PDA suppresses tools.js reticle/markers"
+    },
+    {
+      "ts": "2026-08-16T02:29:42.843Z",
+      "text": "ui r2 verified: halo multiply 0.70-0.72 (ref 0.72-0.74) over a 10px band on all four discs; depth bowl fill dLum -101; bracket stroke dLum +190; ticks +91..+98; O2 glass lum 75-98 (ref 78-113); 625-663 draws, 62-73fps with HUD vs 68-69 without (interleaved, live repo); 4/4 play routes moved:true, 0 NaN in 339 samples"
+    },
+    {
+      "ts": "2026-08-16T02:47:18.919Z",
+      "text": "base r2: hasAirAt published — the seabase now refills O2 (was 1.77/s drain standing dry inside); gridShell winding bug fixed (room/junction interiors were rendering their EXTERIOR skin); wall 40.3/0.741/53% -> 162.6/0.233/100%; hatch, ladder, glazing, foliage and flood rebuilt"
+    },
+    {
+      "ts": "2026-08-16T02:58:46.456Z",
+      "text": "audio r2: leviathan now beats its own bed everywhere - live master 9/9 roars land (Safe Shallows +21.1/+16.0/+20.9 dB RMS, Grand Reef 280m +13.7/+15.4/+23.3, Lost River 678m +11.7/+11.0/+14.1; was -0.9 to +0.4 in the deep). Interaction layer wired by polling tools.js: scan/knife/craft/pickup/beacon/equip/light all audible. ui.js's second AudioContext adopted at runtime so its heartbeat and low-O2 alarm run through the limiter, muffle, duck and mute."
+    },
+    {
+      "ts": "2026-08-16T03:14:14.322Z",
+      "text": "tools r2: view model rebuilt — held tool 0.7% -> 5.57% of frame, five-finger hand on the grip, forearm + orange band, lit READY TO SCAN readout; idle sway 33->36x43px, yaw whip 33->145px; lamp in-scatter now driven by uScatterColor not uAbsorption (cave 193m R+25/G+6 -> R+1.5/G+6.4/B+22.9); deferred pool 0.9 -> 46.9 peak at dropoff; survival.setUpgrade + sv.consume now actually called"
+    },
+    {
+      "ts": "2026-08-16T03:36:27.454Z",
+      "text": "tools r2 verified: 18/18 shots, 0 failed modules, max 694 draws, min 60.2 fps in a clean run; 4/4 play routes moved:true; lamp A/B cave 193m R+1.4 G+5.8 B+20.6 (was R+25 G+6 B+6), deferred pool peak 46.9 at dropoff (was 0.9), 681m lamp now 13.9% of cells (was 0.11%)"
+    },
+    {
+      "ts": "2026-08-16T03:36:40.901Z",
+      "text": "vehicles r2: hull flank 52.9 -> 115.4 lum (ref 115.2); canopy no longer clips; battery 100 -> 900 cells (30s -> 635s endurance, 283m reached); cliff collision 15.94m/frame teleport -> 0.162m with velocity written and 35 hull damage; 'Enter [E]' prompt; parked sub drifts"
+    },
+    {
+      "ts": "2026-08-16T03:51:23.547Z",
+      "text": "ALL 17 PIECES BUILT. Wave 3: survival 68, ui 66, audio 65, movement 63, base 55, vehicles 48, tools 48. Player now moves (41.6m travelled, 0->7.6m dive). 4 more core bugs fixed: dt=0 on frame one, no depth-response opt-out for dry interiors, MeshBasicMaterial normal misdetection, program-cache-key collision."
+    },
+    {
+      "ts": "2026-08-16T04:38:28.644Z",
+      "text": "WHOLE-GAME critique r1 (tag whole-r1) — COMPOSITE SCORE 34/100. Blind A/B 18/18 (100% detection, zero hesitation on any pair). Verdict: real modules, real world, real HUD, but half the 17-shot battery is unusable and the pieces do not agree with each other. BIGGEST GAP: postfx's 58%-authority content meter injects a multi-stop content-dependent gain over a look whose identity is FIXED exposure + fog — kill it (uMeterAmount 0.58->0, drop the 1x1 meter ping-pong and the 2.6/1.1s adaptation) for a pure depth-keyed open loop. Proven by A/B: ?meter=0 already takes deep-void median 24.5 -> 5.4 vs the reference's 6.1. Targets: dropoff median 71.5->11 (ref 10.7), godrays 196.5->54 (ref 53.7), p99.9 in every deep frame 248-255 -> <=110 (ref 99-107), descend-route cell-to-cell median variation 49x -> <3x. CROSS-CUTTING: over 15s of ordinary swimming from 38.7m to 28.2m the frame median goes 43.8 -> 3.1 -> 31.6 -> 25.7 -> 26.6 -> 153.4 (postfx meter x underwater canopy occlusion; uEvMax=1.0 below 30m means a dark frame can never recover). Vertical axis STILL flat: top:bot 1.38-1.99 across every underwater shot vs reference 8.62 (godrays-1) / 3.5 (kelp-forest-1). First-person viewmodel is not in the medium — the flashlight is the brightest object in frame at 680m. PLAY: unassisted dive reaches ~64m horizontal from spawn (2.9 m/s x 22s on 75 O2 at 1.67/s); the seabed is -300m at r=300 and -1369m at r=800, so the entire deep world is unreachable on foot. postfx THREW on route=explore ('Unexpected identifier gate') — whole post chain dead for that run. PERF: 7/18 shots under the 60fps budget (surface-pod 20, surface-above 20, shallows-floor 20.8, shallows-reef 26.1, seamoth-cockpit 43.9, grand-reef 46.9, seamoth 47); draws 208-695 (under budget); tris 1.56M-9.27M. Cost is postfx: ?nopostfx=1 takes surface-above 25.2 -> 89.1 fps (28.5ms/frame), shallows-reef 46 -> 57.7, shallows-floor 63.7 -> 69.6. Top 3 to fix by leverage: postfx, underwater, flora+structures."
+    },
+    {
+      "ts": "2026-08-16T05:33:27.311Z",
+      "text": "terrain r4: diagnosed the flat drop-off face - strataW fires (an.y 0.32-0.40 -> 0.87-1.0) and the LOD gate is open (mpp 0.006-0.012 m/px, all octaves live); the real cause was a 1/f octave stack putting <2% albedo in the bands the eye/Laplacian see, on a face lit only by ambient. Also found the near-sand lattice: the 3.7 cycles/m grain octave, unbent, on the value-noise integer lattice."
+    },
+    {
+      "ts": "2026-08-16T05:45:37.161Z",
+      "text": "creatures r4: creature BRDF rebuilt — de-chromatised medium + full-intensity key so skins hold an albedo (peeper flank rgb(4,11,12) -> rgb(62,67,61) against ref rgb(56,63,42)); chrome dorsal blaze now neutral not cyan; wet fresnel rim, spec breakup from a dermal scale mosaic, iridescence, fin-ray corrugated blades, gill slits, two-scale speckle, thin-tissue transmission. Reaper now 0.66-0.77x the local water (ref 0.74x) instead of 0.90x. Per-instance frustum culling pays for it: 8.50M -> 8.12M tris, 51.8 -> 79.4 fps on shallows-reef."
+    },
+    {
+      "ts": "2026-08-16T05:54:17.167Z",
+      "text": "structures r4: re-based EMIT for the fixed emissive path (was 15-110x over), interior light kit (lit windows+bezels, hatch glow, terminals, arcing conduits, browning-out emergency bus), depthResponse on cavern rock + pod interiors, tear moved off the sightline, hull skin no longer x0.30"
+    },
+    {
+      "ts": "2026-08-16T05:59:13.433Z",
+      "text": "postfx r4: replaced the hue-preserving max-channel saturation with an OKLab grade (chroma about the achromatic axis + per-zone hue rotation + luminance split-tone + gamut-safe return). Zone weights now come from optical depth, not metres/visibility. Chroma recovery is a band-pass on SCENE brightness, not a low-pass on display value. 0 draw-call / 0 triangle delta."
+    },
+    {
+      "ts": "2026-08-16T06:15:51.127Z",
+      "text": "tools r4: view model rebuilt again — scanner drum moved to the near face (it was geometrically behind the readout at the rig's yaw and could never be seen), clamshell seams/louvres/screws/bezels added at zero draw cost via mergeGroups, wetsuit sleeve + mid-forearm bracelet, muzzle glow, scan completion shockwave + databank card + legible 63% arc. Fill rewritten: albedo-weighted and cancelling postfx's per-biome near-zone gain instead of hard-coded constants. Found+fixed our own bug: BOTH the lamp's night adaptation and the view-model fill keyed off uDepthDarken alone, which sky.js only scales 0.95 at night — so the torch ran at full-daylight power in the one dark frame in the battery. Held tool now 6.63% of frame (ref 7.4%, round 3 measured 0.7%); idle sway 49.8x47.8px; +11 draws / +12.6k tris."
+    },
+    {
+      "ts": "2026-08-16T06:46:22.194Z",
+      "text": "CORRECTION: whole-game critic prescribed killing postfx auto-exposure, citing an ?meter=0 A/B. That param was unreachable — capture.mjs had no --params passthrough until now, so their bypass silently did nothing. Re-measured properly: meter OFF is WORSE on all three shots (dropoff 70.5->101.4 vs ref 10.1). Real finding is midtones ~7x too bright, highlights already correct."
+    },
+    {
+      "ts": "2026-08-16T08:37:18.166Z",
+      "text": "underwater r5: refracted (Snell) shaft axis puts god rays at 24deg off vertical per LOOK.md s4; bound uGainChroma/uMatDepthResponse that were silently 0 in the fullscreen passes; red ceiling on the in-scatter SOURCE with a warm-biome guard; undid core's un-normalised sun aureole so the level far field lands within 3% of the biome hex (was +29%). MEASURED, HUD off, same session, same protocol: top:bottom dropoff 6.96->20.1, kelp 3.28->4.51, grand-reef 3.94->5.15, godrays 1.88->2.11. WARNING: with the HUD on the same dropoff frame measures 1.34 - the vitals cluster sits inside the standard measurement crop and is now brighter than the water."
+    },
+    {
+      "ts": "2026-08-16T08:39:11.865Z",
+      "text": "vehicles r5: hull chroma inverted back — hull G/B 1.240 -> 0.83-0.96 against water at 1.04 (reference: hull 0.757 vs water 1.145). Sonar screens 11 -> 169 luminance. Lamp colour now Beer-Lambert filtered."
+    },
+    {
+      "ts": "2026-08-16T09:06:01.395Z",
+      "text": "postfx r5: metered key is now a depth ramp (0.130*exp(-d/34)+0.024) with 0.90 authority; new midtone pull uMidGamma (power on OKLab L, fixes 0 and 1, drops the middle); contrast pivot is metered instead of a constant, far-field contrast 1.06->1.30. Crop medians dropoff 61->19 (ref 10), godrays 115->62 (ref 49), kelp 60->36 (ref 41), shallows 116->132 (ref 134), deep-void 2.5->2.9 (ref 2.5). 0 extra draws."
+    },
+    {
+      "ts": "2026-08-16T09:09:46.517Z",
+      "text": "structures r5: texHull rebuilt on a tileable continuous-noise field (no per-panel random tone, no window-row banding); gravity streaks + fouling line moved to vertex colour; wreck rebuilt with doors/railings/ladders/vents at human scale, two decks, merged draws 747->332; jellyshroom caps rebuilt with a radial emissive+alpha ramp and a wobbled silhouette; lifepod gets a rubbing strake, aerials, a wave-riding foam collar and a de-aliased tear."
+    },
+    {
+      "ts": "2026-08-16T09:30:20.433Z",
+      "text": "tools r5: view model now goes through applyUnderwater({caustics:0,fogScale:0.15}) AND carries core's depth response on its emissive fill — forearm falls 188 -> 15 from 20m to 681m (was 175 -> 134). Lamp scattering normalised by luminance, not max channel: fixes a 4x per-biome brightness error that made the cone invisible in violet water."
+    },
+    {
+      "ts": "2026-08-16T09:53:20.509Z",
+      "text": "creatures r5: reaper flank tileContrast 3.88 -> 8.2-10.8 (ref 9.47), flank/water 0.735x (ref 0.74x); metric-scale armour plating, skull, gill vents, keel, bioluminescent grooves + glowing eyes; creatures now obey the same depth-darkening as all other geometry"
+    },
+    {
+      "ts": "2026-08-16T11:03:02.323Z",
+      "text": "Composite 34->38. Critic verified its own controls and found ?nohud=1 INEFFECTIVE (tools.js draws its own HUD) - reported rather than built on it. Fixed: shots.js UI request now fails loudly (base-interior went 2 rounds unjudged behind the PDA); play descend/deep routes now reach 100m/298m instead of bottoming at 41m."
+    },
+    {
+      "ts": "2026-08-16T12:31:59.862Z",
+      "text": "terrain: caustic net fixed — core uwCaustics() measured median 0.046/mean 0.086 (transfer pow(min(a,b)*2,1.6) over a tile of mean 0.165 collapses to its low tail), i.e. +1-2% of local diffuse on 25m sand. terrain now samples uCausticsTex itself as a mean-neutral MULTIPLIER on sun+0.34*ambient; measured on-screen peak:shadow 1.99 (+37%/-31%) on near sand, was ~1.0."
+    },
+    {
+      "ts": "2026-08-16T12:42:35.673Z",
+      "text": "ui r6: setState({pda,hud}) implemented and LATCHING (tools.js reopened the PDA after shots.js asked for pda:false) — base-interior is PDA-free and judgeable for the first time in 3 rounds; warning-row cache was keyed on ids only so every deep still printed the PREVIOUS shot's depth (deep-void at 681m read '280m') — fixed; world markers culled by count/distance/relevance/depth, one label max, 8 labelled markers at 681m -> 2 glyph-only; PDA rebuilt as translucent glass with parallax, scanlines, tick field, edge glow and sub-pixel chromatic fringing. Also: ?nohud now takes BOTH overlays down (tools.js never read the flag). CORE BUG: capture.mjs --params=\"a=b\" arrives as &a — the value is dropped at the second '='."
+    },
+    {
+      "ts": "2026-08-16T13:02:48.263Z",
+      "text": "vehicles r6: seamoth-cockpit was staging the sub inside the shot camera's own hillside (terrain 4.16m dead ahead, flora everywhere else) — replaced both staging searches with a heightfield corridor march + NDC frame-fit; cockpit frame median 24.6 -> 94.8 vs ref 81.5 on the same grade, depth held at 45m; exterior sub now fully in frame at 16.5m with lamps toward the lens"
+    },
+    {
+      "ts": "2026-08-16T13:44:00.631Z",
+      "text": "tools r6: bare skin forearm replaced with dive glove + wetsuit sleeve; view-model fill re-anchored to U.uFogColor (was 1.5-8.7x the water's radiance at every depth); postfx near-zone gain now cancelled on albedo AND fill; lamp knee moved to luminance so the light pool keeps the medium's hue instead of a salmon ceiling; ?nohud=1 honoured."
+    },
+    {
+      "ts": "2026-08-16T13:44:25.052Z",
+      "text": "structures r6: hull emissive read killed (lamps re-aimed from a=0.2 to a=1.1-1.9, one downwelling fill, sky-occlusion baked into the plating) — wreck world-crop top:bottom 0.10 -> 1.12, full-frame 0.11 -> 1.05 against wreck-1's 1.86; added a 3-deck deckhouse with lit window rows, railings, ladder, funnel. Jellyshrooms rebuilt: cosine dome, lobed+drooping brim, radial ribs, gill fan, RGB cap ramp and a view-dependent SSS/rim shader wrapped over applyUnderwater — cave world-crop median 7.9 -> 18.6 (ref 22.1), red fraction 29% -> 51% (ref 65)."
+    },
+    {
+      "ts": "2026-08-16T13:49:25.298Z",
+      "text": "structures: WARNING for whoever owns the cave frame — the flat violet/navy slabs across the top of the 'cave' shot are terrain.js's cavity wall, not structures'. Proof: ?nostruct keeps them, and forcing our cave rock bright green (?tintcave) shows green only on the right wall and the floor. Raycasting disagrees because terrain displaces on the GPU, so its CPU geometry is not what is drawn."
+    },
+    {
+      "ts": "2026-08-16T18:40:31.394Z",
+      "text": "structures r7: surface microstructure on every material (hull/steel/pod/rock/sand/crust), tuned by measurement — wreck plating crop detailRMS 6.87 -> 9.74 (ref plate 9.28-11.04); pasted window rectangles replaced with real recessed coamings (jambs, sill, drip brow, mullion, dark reveal) so the window band's tileContrast 38.73 -> 30.60 and p99.9 236.8 -> 189; killed the black spill blobs (glow sprites were on NORMAL blending in front of lit plating - now SrcAlpha/One); lifepod gets geometric panel seams + lapstrake step, gravity streaks, a scorch plume rooted at the breach, and a ladder with 5.5cm rungs at 0.52 albedo instead of 1px black lines; deep-void bio cut to faint teal specks (sizes 1.5->0.55, three brightness tiers, halos 3.2m->1.15m, lamps 6500cd->1500)."
+    },
+    {
+      "ts": "2026-08-16T18:46:57.460Z",
+      "text": "terrain r7: caustic net was 7.5:1 p95/p05, not too weak - shaped to 2.2:1 and cells retuned to 1.0-2.0m; sand mid-band contrast halved; surface presets wired in; cave white slabs proven NOT terrain via new ?tdbg5 ownership view"
+    },
+    {
+      "ts": "2026-08-16T18:50:28.711Z",
+      "text": "creatures r7: core sfBroadband applied in OBJECT space to every creature skin (albedo+roughness+relief); leviathan ribs/taper/tail/damage de-repeated via a shared JS/GLSL plate-phase warp; eyes rebuilt as geometry (socket dent, lid ring, cornea bulge) with pupil/iris/sclera shading; jellyfish now a population (log-uniform size, tilt, 3D depth) with canal-structured glow. reaper flank A/B (cnsurf=0): detailRMS 4.91->6.25, tileContrast 5.90->5.59."
+    },
+    {
+      "ts": "2026-08-16T19:00:46.603Z",
+      "text": "flora r7: creepvine seed pods rebuilt as 12-segment teardrop berries (was a 5-gon), warm amber solved through the medium instead of authored red, gi 80 -> 2.4 with a limb rolloff and per-pod brightness spread; kelp-forest clipped area (lum>=250, nohud) 0.0338% all-white -> 0.0016% amber, reference 0.0002-0.0012%. Surface microstructure on every archetype via core sfBroadband in OBJECT space (world space swims when the plant sways), band-limited by pixel footprint. Coral-tube crop detailRMS 9.20 -> 19.38, tileContrast 5.60 -> 20.00 against shallows-floor-2 at 28-32 / 17.7-19.7."
+    },
+    {
+      "ts": "2026-08-16T19:07:00.709Z",
+      "text": "vehicles r7: surface microstructure in vehicle object space (no crawl on a moving hull), geometric panel plating, canopy seal + rim bolts, recessed instruments, moulded centre console replacing the translucent black dash slab, upholstered seat, structured lamp lens"
+    },
+    {
+      "ts": "2026-08-16T21:11:55.823Z",
+      "text": "Core: surface.js redesigned after measurement proved it wrong - octaves now build DOWNWARD from the fragment's own screen footprint (fwidth) with FLAT per-octave amplitude, instead of upward from a fixed world scale with 1/f rolloff which collapsed into a 9-33px blotch painting over panel lines. Presets clamped to documented range. play.mjs fps was structurally 0 on every route; now measures real step cost."
+    },
+    {
+      "ts": "2026-08-16T22:52:49.758Z",
+      "text": "structures r8: hull plate spectrum FLAT at last — clean-plate crop 2.51/2.62/2.67/2.48 %/octave (ratio 1.08) against the real plate's 1.43/1.62/1.62/1.38 (1.17), down from 4.08/5.10/6.73/8.20 rising. tileContrast 6.22 vs reference 7.43. Painted hatch decals deleted, deckhouse window grid halved and grouped, ladders regauged, thin members stop casting 15cm shadow-map rules. Deep-void pod no longer a blob: >=240 5.37%->0.20% (ref 0.10%). CORE BLOCKER: surface.js fwidth() in the vertex stage kills 31 shader programs game-wide."
+    },
+    {
+      "ts": "2026-08-16T23:26:42.607Z",
+      "text": "flora r8: creepvine rebuilt as a ribbed bottle-brush (46 whorls x 7 hooked blades with real midribs + edge thickness), palms and sea fans de-carded, pods now 12-16 discrete amber berries that no longer clip; surface microstructure opted into applyUnderwater with grain at the 0.25 ceiling and sampled in material space so it cannot swim with the sway"
+    },
+    {
+      "ts": "2026-08-16T23:30:19.741Z",
+      "text": "creatures r8: BLOCKER - core/surface.js sfBroadband() calls fwidth() and applyUnderwater injects SURFACE_PARS into the VERTEX shader; derivatives are fragment-only in GLSL ES so 31 materials fail to link and the entire world vanishes. creatures.js now shims it locally."
+    },
+    {
+      "ts": "2026-08-17T00:23:24.413Z",
+      "text": "postfx r8: added a scene-referred shoulder before the tone curve (knee=display 207, asymptote=display 247, small residual slope so only the sun disc reaches white) and a ceiling on bloom source energy. Bloom skirt alone was three quarters of all deep clipping."
+    },
+    {
+      "ts": "2026-08-17T00:25:44.479Z",
+      "text": "tools r8: flashlight disc deleted — pool is now a DstColor multiply on the surface it lands on, cone importance-sampled in 1/t with the backscatter lobe (was evaluating the forward peak, 7.3x too bright), all depth taps off a C1 bilinear field so the half-res grid is gone. Surface microstructure wired on 20/33 module materials (was 0)."
+    },
+    {
+      "ts": "2026-08-17T02:21:33.752Z",
+      "text": "Round 8: structures 46->62, watersurface 57, postfx 52, flora 51, creatures 51, tools 58->34 (lamp overcorrected, 9.2x weaker at 681m). Critics now hand-roll Laplacian pyramid meters so measure.mjs reports per-octave energy natively. Real hull plate: [1.78,2.27,3.36,4.56] tilt 2.56."
+    },
+    {
+      "ts": "2026-08-17T02:57:39.889Z",
+      "text": "BUILD WAS BROKEN AND I BROKE IT. My fwidth() in surface.js was injected into the vertex stage (fwidth is fragment-only in GLSL ES), silently failing to LINK 34-37 programs while every module still reported init OK. Terrain, structures, vehicles, base, lamps and the medium pass stopped drawing; round-8 scores for flora/creatures/watersurface/postfx/tools were all measured on empty frames and are void. Fixed via camera-distance footprint (no derivatives), threaded world pos (varyings are write-only in vertex), include guard, and namespacing uSfPixelScale after it collided with every particle system's own uPixelScale. capture.mjs now hard-fails on shader link errors so this can never be scored as art again."
+    },
+    {
+      "ts": "2026-08-22T00:25:56.809Z",
+      "text": "creatures r9: leviathan opacity was a value defect not a blending one (material dumps opaque/depthWrite; flat-magenta override proves depth occludes) - fixed by staging distance + chroma; bioluminescence lattice replaced with domain-warped clustered photophores; real eye (ring iris, dark centre, cornea catchlight, dark leviathan sockets); jelly field near-bias exponent was inverted"
+    },
+    {
+      "ts": "2026-08-22T00:46:03.995Z",
+      "text": "watersurface r9: real displaced chop in the 0-6m band (spectrum rebuilt, 83% of variance now in the 13-58m band, steepness weighted onto the 5-22m chop so crests point and draw a rim); capillary ripple gated by windward face + slick field instead of a flat field everywhere; every noise tap now LOD-biased on its own top octave, which was the ripple lattice; foam raft edges hardened and coverage held constant with range. Fine-octave energy 7.51%->5.66% (ref 4.14), octaveTilt 1.36->1.63 (ref 1.79), tileContrast 20.6->16.9 (ref 14.0)."
+    },
+    {
+      "ts": "2026-08-22T01:44:04.763Z",
+      "text": "vehicles: postfx SSAO multiplies the whole Seamoth cockpit interior down 5-10x (--params=ao=0 scanline 119-210 vs 1-105, reference 95-198). Interior levels are on-reference with the pass off; tuned against ao=0, not the shipping frame."
+    },
+    {
+      "ts": "2026-08-22T02:24:03.566Z",
+      "text": "Round 9: survival 74 (FIRST PASS in the project - drowning and crush now kill, verified health 100->0 with real death+respawn), movement 68, watersurface 59, vehicles 59. Critic found survival.js keyed a 35HP god-mode floor off my ?capture=1 flag while play.mjs hardcoded capture=1 - every play route was measuring a game that could not kill you. Harness now declares its mode explicitly and any suppression is reported."
+    },
+    {
+      "ts": "2026-08-22T04:16:31.440Z",
+      "text": "creatures r10: found the real cause of 'the leviathan is translucent' — a ?cnsolid=1 flood shows grand-reef contained ZERO leviathan pixels. update() culled every shot-staged agent because it measured range to movement.position (still at the lifepod, 420 m away) rather than to the shot camera."
+    },
+    {
+      "ts": "2026-08-22T06:07:35.441Z",
+      "text": "Round 10: creatures 45, movement 61, watersurface 63, vehicles 62. Critics found 3 more harness bugs of mine: capture.mjs silently wrote the loading splash as a shot PNG (drawCalls 0, exit 0); captures were non-deterministic because perf was measured over a 1.2s WALL-CLOCK window, giving a 2x measurement spread on an unchanged build; and applyShot teleported only the camera so every range-culled module culled itself out of the frame it was judged in. All fixed. Also: the flank saturation figure in my own brief was INVERTED - ours is 0.92, reference 0.49; the creature is rendering as pure fog colour with no albedo of its own."
+    },
+    {
+      "ts": "2026-08-22T19:39:55.806Z",
+      "text": "vehicles r11: cockpit interior now has real light sources (8 analytic cabin emitters + light guides); lower-third median 23.1->36.6, crushed-to-black 7.93%->6.07%, near-console crush 3.49%->0.33%. The residual crush is core's SSAO: the SAME unchanged build with --params=ao=0 measures median 56.3 and crushed 0.000%."
+    },
+    {
+      "ts": "2026-08-22T20:56:18.577Z",
+      "text": "creatures r11: leviathan albedo — flank R% 8.3->34.8, sat 0.926->0.683 on a matched body crop, water unchanged; jellyfish crazy-paving root-caused to cnOrgan cores clipped by their own lattice cell wall; black fin wedges proven to be postfx SSAO (?ao ablation takes shallows-reef exact-black 5832->0)"
+    },
+    {
+      "ts": "2026-08-22T21:27:45.080Z",
+      "text": "creatures r11 final: leviathan flank R% 8.3->34.9 sat 0.926->0.682 (matched crop, reproduced across two runs, water unchanged at R% 12.2); grand-reef apex now IN FRAME at 13.7m (was staged at 38m with its body centre at screen x 0.93) - same crop detail 4.64->15.52 tileC 2.43->9.05; jelly crazy-paving root-caused to cnOrgan organ cores sliced by their own lattice cell wall; black fin wedges are postfx SSAO, not this material (proved with ?cnsolid, ?cnhide and ?ao)"
+    },
+    {
+      "ts": "2026-08-22T21:49:46.251Z",
+      "text": "Round 11: movement 61->76 (biggest jump yet - terrain-hugging fixed, grounded-half speed 0.496->2.81 m/s, descend now reaches 138m not 92m, verified by git-HEAD swap A/B), vehicles 64, watersurface 65. Core fix: the pressure play route started 39m INSIDE the terrain (seabed -81.4 at that XZ) so frame 1 rendered the seabed from underneath; moved out over the drop, now 98 samples in the 144-200m band and crosses the suit rating."
+    },
+    {
+      "ts": "2026-08-23T02:16:59.812Z",
+      "text": "Round 12: composite 43->45 on the repaired build. creatures finally scored (45->52) once run schema-free after 3 output-cap deaths. movement 72, watersurface 68, vehicles 63. CRITICAL: the whole-game critic found the blind trial leaked the answer through 4 side channels - our PNGs 2.4MB dated today vs references 300KB weeks old, always 1920x1080 vs varied, and our HUD vs Subnautica's. Every detection rate recorded in this project is suspect. blind.mjs now normalises both sides. Also fixed: applyShot threw on EVERY shot assigning to isSubmerged, which is a getter."
+    },
+    {
+      "ts": "2026-08-23T06:51:36.400Z",
+      "text": "movement r13: the seabed's lift is now bookkept and returned - what the ground gives, the ground takes back; contactMu re-derived to 1/maxSlopeTan after its two recorded costs failed to reproduce on deterministic captures"
+    },
+    {
+      "ts": "2026-08-23T07:51:45.626Z",
+      "text": "Round 13 — FIRST GENUINELY BLIND TRIAL: still 18/18. The critic's verdict: 'the metadata was redundant, not load-bearing', 13 of 18 decided in ~1 second. So the art gap is real, not a measurement artefact. watersurface 68->42 after a critic ablated ALL foam and found the dominant defect survives it: far-field aliasing, 4.25% single-pixel speckle vs reference 1.15%. Three confirmed defects traced to postfx from OTHER modules' shots: AO with no floor, DoF destroying 60% of interior detail, missing output dither."
+    },
+    {
+      "ts": "2026-08-23T10:20:05.037Z",
+      "text": "watersurface r14: band-limited the wave normals against the ANISOTROPIC pixel footprint (1/sin grazing, per-component in its own direction). Far band 2563 -> 107 bright components, laplacian 29.5 -> 6.3; near band unchanged (26.09 -> 25.92). Ablated with ?noaniso."
+    },
+    {
+      "ts": "2026-08-23T13:39:38.358Z",
+      "text": "Round 14: postfx 57, movement 58, watersurface 56, creatures 41. postfx's three cross-module defects verified closed by ablation (AO floor, DoF near-CoC, and the bullseye traced to a 5-bit chroma quantiser rather than missing dither - the builder's own dither hypothesis was correctly REFUTED). CRITICAL harness fix: the same shot measured sat 0.879/0.958/0.985 depending only on which shot preceded it, while its own run-to-run noise is zero. Batteries now run each shot from a fresh page with a uniform warm-up; all three orderings now read 0.982."
+    },
+    {
+      "ts": "2026-08-23T16:23:10.246Z",
+      "text": "movement: steep-face freeze fixed — regularised Coulomb friction (tanh) at the seabed contact. 24 baseline runs on 58-87 deg faces measured EXACTLY 0.000m over 8s; all 24 now move (0.245-4.016m), monotone in face angle, min instantaneous speed never zero. Open water bit-identical, ledger and buoyancy asymptote unchanged."
+    },
+    {
+      "ts": "2026-08-23T17:28:26.153Z",
+      "text": "watersurface r15: anisotropic textureGrad fetch + stochastic residual for the band-limited chop; far band laplacian 7.73%->12.01% (ref 12.85), sat 0.383->0.419, mean 143.4->138.0 (ref 133.4), shimmer 0.56%->2.22%"
+    },
+    {
+      "ts": "2026-08-23T17:56:18.185Z",
+      "text": "creatures r15: reaper face built (gape + 56 fangs + sunk sockets + crest); mandibles thinned 2.16m->0.94m radius and splayed outward; head-on restage at 12m. Head-box eye pixels 770 -> 3497. Mask-weighted R% 15.2 -> 53.5, sat 0.895 -> 0.751. grand-reef coverage 33.05% -> 8.90%, left-edge 779 -> 0. FIXED: resetForShot threw on core's own reset pass (salt undefined) in every capture."
+    },
+    {
+      "ts": "2026-08-23T18:29:38.232Z",
+      "text": "Round 15: movement 68 (freeze fixed, moves 23x further, but 2 of 34 faces still lock), watersurface 58, creatures 46 (colour moved R% 15->54.5), postfx 42. MY BRIEF WAS BACKWARDS: I told postfx to remove absolute black, but the references have MASSIVE true black in deep frames - cave-3 median 5 vs our 16, and our cave sits 8.2% below luma 4 against the reference's 41.7%. The deep band is ~3x too LIFTED. A round was spent pushing 5000 pixels one code away from black, invisibly. Also fixed: capture.mjs --params silently dropped its value at the second '='."
+    },
+    {
+      "ts": "2026-08-23T20:46:48.434Z",
+      "text": "postfx r16: deep black point — depth-ramped, grade-inverted knee restores true black below 60m. cave blk 0.09->6.43% (plate 12.10), median 16->6 (plate 5); deep-void 0.02->14.43% median 23->4 (plate 3); grand-reef 0.31->2.47% median 26->8. shallows-reef/base-interior/cockpit/godrays BIT-IDENTICAL under ?deepblack=0."
+    },
+    {
+      "ts": "2026-08-23T22:17:07.869Z",
+      "text": "creatures r16: skull rebuilt into the loft (muzzle+cranium flare, socket/jaw/nostril section dents, brow shelf, jaw hinge, 56 fangs on a curved mouth line); pixel-scale aliasing traced to the scute cell wall and removed (cranium detailRMS 29.0 -> 18.1); grand-reef top-edge 505 -> 196 px"
+    },
+    {
+      "ts": "2026-08-24T01:09:12.934Z",
+      "text": "Round 16: postfx 40, movement 66, watersurface 54, creatures 50. Scores are drifting DOWN because the critics are sharper and because real new defects were introduced (postfx now makes flat black instead of dark texture; movement's hull fix lets the diver swim INSIDE the wreck, 98/120 frames). Root cause of three wrong briefs found: reference/subnautica/index.json has no depth or framing metadata, so a 'cave' target could come from a 209m Jellyshroom shot from a Seamoth while our cave shot is horizontal at -190m. Round 17 audits all 58 plates first and rebuilds the shot-to-plate mapping before any brief uses it."
+    },
+    {
+      "ts": "2026-08-24T05:08:20.709Z",
+      "text": "Round 17: plate audit complete — all 58 references measured and re-catalogued; 14 of 18 shots now have a verified primary plate, 4 have NONE (godrays, dropoff, creature-close, school). postfx 40->70 immediately once its targets were correct. blind.mjs now pairs on the verified whitelist, not the loose category — it had been comparing our 40m up-look against a 140-160m plate. movement/watersurface/creatures agents killed by API 529 overloads (server-side); queued for retry."
+    },
+    {
+      "ts": "2026-08-24T08:37:23.071Z",
+      "text": "biomes r22: the red brief's lever is inert. Authored red is BELOW underwater.js's redRatio floor in all 15 biomes, so lowering it cannot move a max(). Live uniform confirms: grand_reef authors 0.1384/m, shaders receive 0.4596/m = the floor exactly."
+    },
+    {
+      "ts": "2026-08-24T11:38:40.048Z",
+      "text": "postfx r23: no grade change shipped. Round 22's ramp was fitted to cold-capture frames that capture.mjs's warm-up discard (same commit) stopped producing; re-measured warm, the depth-clean pairs read 0.99/0.92/1.66/1.68 so a lift is the wrong sign. Top band 2.5-6.5x plate while bottom band is 0.31-0.67x on 6 of 7 pairs, so no global exposure value lands either. deep-void flat black closed: shipped 0.83 / ablated 0.00 / plate 0.60."
+    },
+    {
+      "ts": "2026-08-24T12:32:48.316Z",
+      "text": "Round 23: underwater 45->71. The shared critic caught the two modules FIGHTING - underwater added red and dropped saturation, postfx removed the red and put the saturation back. My redCap unification is dead by ablation: the cap never binds, with an order of magnitude of headroom at every call site. And my grand-reef 'framing artefact' correction was half wrong - the plate's actual open water reads R% 34, so deep water DOES need red. Third time an agent has corrected my cross-cutting analysis."
+    },
+    {
+      "ts": "2026-08-24T13:15:07.961Z",
+      "text": "underwater r24: published the ungraded (?nopostfx=1) baseline for grand-reef/cave/kelp-forest/deep-void, bit-identical across two isolated runs. Ungraded the medium sits on its plates (grand-reef sat 0.509/R% 50 vs 0.543/47; cave 0.714/77 vs cave-1's 0.717/67; deep-void 0.758/26 vs 0.791/20). The grade then adds 23-56% saturation and removes 54-69% of relative red on the two deep shots. Refuted the grand-reef G/B cost: ablating hueRelease moves ungraded G/B by -1.4%..+1.1% on 8 windows and graded G/B by 8.6%..41.5% - the ratio move is made downstream, not here. Added ?uwHueRelease / ?uwWarmRelease so both choices can be ablated from the harness."
+    },
+    {
+      "ts": "2026-08-24T14:50:22.368Z",
+      "text": "postfx r24: measured the graded-vs-ungraded delta on a HUD-free crop and stopped it. The chain was adding +0.076..+0.279 saturation and removing 1-25 relative red on all five shots; it is now -0.057..+0.053. Attribution needed six new ablation knobs (?vib ?crec ?crlo ?gfar ?gnear ?cgamma) because ?zonesat reached only 30% of it - the biggest single contributor was the ACES curve (+0.115 sat / -22 R%), whose answer, chroma recovery, measured exactly 0.000 because its ramp-in band was absolute scene-linear and every deep frame lives below it."
+    },
+    {
+      "ts": "2026-08-24T15:18:17.442Z",
+      "text": "Round 24: postfx 40->62, the fight is over. Grade delta went from a one-sided push (+0.279 sat, -25 R% on grand-reef) to scatter about zero. grand-reef now EXACT on all three axes: 34.2/0.457/58 vs plate 34.0/0.461/56. deep-void flat black closed 4.87%->0.48% vs plate 0.60%. The named lever reached only 30% - the real culprit was the ACES tone curve, which no knob could reach, and a chroma-recovery gate quoted in absolute scene-linear that never fired below 280m. Two more of MY plate columns were wrong: cave used a non-primary plate, shallows-floor used a level target PLATES.md forbids."
+    },
+    {
+      "ts": "2026-08-24T17:45:54.308Z",
+      "text": "Round 25: underwater 72, postfx 64 - best yet for both. The graded sum now lands on 8 of 20 shot-by-axis cells vs the raw medium's 6. postfx shipped ONE change and deliberately refused three others where its stage was already correct. It also found a bug in MY round-22 warm-up fix: the reload was skipped for shot #1, so position 1 of every battery was measured on a page that had already rendered it - kelp-forest read 49.3 at position 1 vs 28.4 at position 2. Fixed. New gap: deep-void's vertical structure is INVERTED and neither builder named it."
+    },
+    {
+      "ts": "2026-08-24T20:29:20.095Z",
+      "text": "Round 26: THE TARGET WAS INVALID. deep-void-2's topBottom 0.54 is an opaque rock ceiling plus HUD (12.4% of pixels) plus a biolum stalk - masking HUD alone moves it to 0.956, and the WATER ONLY gets darker downward at ratio 1.4, the SAME direction ours already produces. PLATES.md already forbade whole-frame stats from HUD-carrying plates. I wrote the target anyway and spent a round on it. underwater refused to invert its elevation term and was right, from LOOK.md not the plate. postfx 64->70, underwater 72->68; grand-reef lost all three exact axes."
+    },
+    {
+      "ts": "2026-08-24T23:45:48.984Z",
+      "text": "Round 27: underwater REFUSED the grand-reef recovery and proved it unphysical. On water-only windows the shipped ramp already matches the plate (1.109 vs 1.098 vertical, octave tilt 0.70 vs 0.69); k=3.32 gives 'correct average, no correct pixel'. Horizon invariance measured not argued: gain(rd.y=0)=1 by construction and the band straddling the horizon reads 48-50 at BOTH k values, so k cannot move that median at all. And deep-void-2 has NO clean water window - its one candidate has larger horizontal spread (1.65) than vertical (1.39) because it is a lit cave mouth plus a lamp. Two rounds were spent on targets from it. Fifth builder refusal, fifth vindication."
+    },
+    {
+      "ts": "2026-08-25T03:22:30.087Z",
+      "text": "Round 28: biomes fixed both water-window defects by derivation - grand-reef ambientFloor 0.300->0.092 (the table asserted half of surface daylight survives to 280m), landing 0.7% and 0.05% off the plate; kelp green unpinned from 249/255 via a new level field. It refused part of the brief with proof: 91% of kelp's fog-blue is a Safe Shallows BLEND LEAK, not biomes' to set. Core fix from its report: uwInscatter's min() clamp gave the up-look a KNEE, flattening 28% of frame height to G 249.1/249.8/249.8; soft-clamped, now 240/234/217. Also flagged: postfx's tonemapper MANUFACTURES red on near-clipped windows - R% 37 measured where the medium's red was 0.00004."
+    },
+    {
+      "ts": "2026-08-25T04:49:54.289Z",
+      "text": "postfx r29: ACES_OUT*ACES_IN is not a round trip (red row picks up 7.675% of green); the curve manufactured up to 130 counts of display red out of a scene red of exactly zero, but only above scene-linear 0.42-0.55. Per-channel ceiling at the scene's channel ratios shipped (?aceshue=0 restores r28). Retracting round 28 item 9(b): its kelp plate window is 71.6% clipped."
+    },
+    {
+      "ts": "2026-08-25T06:24:10.797Z",
+      "text": "underwater r30: the reference water is ONE chromaticity. godrays-1 pure water (5 verified windows, 0% clipping in every channel) holds G/B 1.063-1.104, R% 0.07-0.19, sat 0.998-0.999 across p90 92.5-149.3. Ours holds G/B 0.779-0.857, R% 6.85-9.55, sat 0.932-0.905 across p90 108-172 - MORE drift, already in the direction the brief asked for. Round 30's top data point is a 98.6%-green-clipped window; measure.mjs's clipPct cannot see per-channel clipping."
+    },
+    {
+      "ts": "2026-08-25T08:25:43.216Z",
+      "text": "underwater r31: uGainChroma ablated with a new ?uwGainChroma=0 override (uwSkyAtten=0 could not isolate it). Its whole contribution to level-dependent hue is <=0.11 points of a 3-73 point signal and flips sign between window sets; it only adds 0.1-0.7 relative red. Also: G/B-vs-level on 8-bit pixels is a transfer-curve statistic, and godrays-1's own pure water reads -4.2 to +7.0 %/octave in linear depending only on window choice. Medium unchanged."
+    },
+    {
+      "ts": "2026-08-25T12:35:17.652Z",
+      "text": "creatures r32: the eye ignored albedo because the environment-mirror gate was on the wrong half of the ball (cornea only); sclera+socket floor carried the full lobe. Reef lens 0.79 -> 11.29 median (ref 17.72), lens/cheek 0.029 -> 0.404 (ref 0.394). Reaper eye p99 217 -> 73, wash removed. capture.mjs is BISTABLE: 3 isolated runs of one unmodified build gave whole-frame median 53.09 / 69.68 / 52.72 - screen every frame before quoting it."
+    },
+    {
+      "ts": "2026-08-25T13:14:25.165Z",
+      "text": "Round 32: 14/14 on the fair-plate subset. Round 13 was 18/18 including four unjudgeable pairs; removing them changed nothing, so the leak was never the pairing. 12 of 14 decided in about a second WITHOUT magnification. Category tally: water surface 4 (most of any), material 4, water medium 2 (back from 0 after nine rounds of medium work), content 1, silhouette 1, UI 1, emitter 1. New concrete bugs: a hard black/cyan BINARY surface mask with no intermediate values; sun glitter as a regular orthogonal lattice; grass cards rendering pure black or pure MAGENTA (two-sided lighting); fish and base as unlit black cutouts at night. The fps collapse it reported (kelp 21.0) was GPU contention - reproduces at 149.1 idle."
+    },
+    {
+      "ts": "2026-08-25T14:31:42.472Z",
+      "text": "watersurface r33: Snell rim band-limited (fwidth + facet slope + scatter cone in quadrature); the round-32 glitter lattice does not reproduce from this tree — see the header."
+    },
+    {
+      "ts": "2026-08-25T14:33:12.832Z",
+      "text": "flora r33: the flat unlit cyan/magenta blobs in the grass are tools.js resource nodes (podMat emissive 1.6 x vColor^2), not flora — proven by hiding scene.children[13] tools.nodes. Grass rebuilt on blade() with twist + foot; near-black pixels in a fixed 900x700 window 698 -> 143."
+    }
+  ],
+  "pieces": {
+    "underwater": {
+      "status": "critiquing",
+      "round": 31,
+      "score": 67,
+      "verdict": "REFUSAL CORRECT AND INDEPENDENTLY REPRODUCED; NOTHING SHIPPED. The briefed quarter is not there: ?uwGainChroma=0 on my own isolated captures moves godrays water G/B drift by +0.13 %/oct (code 1.64->1.77, linear 2.39->2.71; wide set 0.92->0.96 / 0.55->0.64), i.e. the WRONG WAY and about a tenth of the signal, all windows clipAny 0.00. It is a red+saturation term only: R% 8.56->7.91 code / 1.032->0.921 linear, sat 0.914->0.921. Shipped medium is unchanged from r30 on all 9 shots (median/sat/R%/bandGB/topBottom/hueVar identical to every published digit). Their two named traps both verified by me: our godrays bright end is the Snell window + compass halo (sd 6.3-16.3 vs medium 0.6-2.2, p99 G247/B246) and it alone manufactures the briefed 10% — 0.92 %/oct becomes 8.25 %/oct code / 18.69 linear the moment flat-window filtering is dropped; and ?nopostfx=1 godrays water rails clipAny 78.1-80.1%.",
+      "gap": "Zero pixels changed, and the module's real standing defect went unnamed: our godrays water is RGB(16.6,148.5,190.5), G/B 0.780 — i.e. sitting on LOOK.md's 0-20 m #2C9BC8 chromaticity (G/B 0.775) at a 40 m open-ocean shot — but carrying R% 8.7 against that hex's 22.0, so we are 2.5x too LITTLE red at our own chromaticity, not too much. Next round must fix the target, not the ramp: godrays (40 m, open ocean, B>G) has been colour-judged against godrays-1 (150 m, G>B, R=0) for four rounds.",
+      "history": [
+        {
+          "round": 1,
+          "score": 28,
+          "ts": "2026-08-15T16:59:05.294Z"
+        },
+        {
+          "round": 2,
+          "score": 42,
+          "ts": "2026-08-15T18:16:14.047Z"
+        },
+        {
+          "round": 3,
+          "score": 45,
+          "ts": "2026-08-15T20:18:32.714Z"
+        },
+        {
+          "round": 5,
+          "score": 56,
+          "ts": "2026-08-16T09:17:55.720Z"
+        },
+        {
+          "round": 23,
+          "score": 71,
+          "ts": "2026-08-24T12:29:45.474Z"
+        },
+        {
+          "round": 23,
+          "score": 71,
+          "ts": "2026-08-24T12:32:48.081Z"
+        },
+        {
+          "round": 24,
+          "score": 69,
+          "ts": "2026-08-24T15:15:04.878Z"
+        },
+        {
+          "round": 24,
+          "score": 69,
+          "ts": "2026-08-24T15:18:17.340Z"
+        },
+        {
+          "round": 25,
+          "score": 72,
+          "ts": "2026-08-24T17:39:39.033Z"
+        },
+        {
+          "round": 25,
+          "score": 72,
+          "ts": "2026-08-24T17:45:53.993Z"
+        },
+        {
+          "round": 26,
+          "score": 68,
+          "ts": "2026-08-24T20:26:42.401Z"
+        },
+        {
+          "round": 26,
+          "score": 68,
+          "ts": "2026-08-24T20:29:19.805Z"
+        },
+        {
+          "round": 27,
+          "score": 66,
+          "ts": "2026-08-24T23:42:45.989Z"
+        },
+        {
+          "round": 29,
+          "score": 65,
+          "ts": "2026-08-25T05:19:57.212Z"
+        },
+        {
+          "round": 30,
+          "score": 64,
+          "ts": "2026-08-25T07:22:23.932Z"
+        },
+        {
+          "round": 31,
+          "score": 67,
+          "ts": "2026-08-25T09:58:54.922Z"
+        }
+      ],
+      "shotTag": "r31-crit"
+    },
+    "watersurface": {
+      "status": "critiquing",
+      "round": 34,
+      "score": 53,
+      "verdict": "Snell-rim fix is real and visible (6m ablation vs shipped at 3x: two-value stencil becomes a continuous ramp) and the glitter-lattice refusal reaches the right answer — the checkerboard is in blind-r32 and gone from three current captures, 14.2px@90deg FFT peak/annulus 172.2->24.0 in the fixed native window at 820,570 — but the shipped uRimRough=0.45 halves the 18m ceiling across four octaves (2nd -55%, 3rd -62%, 4th -52%, coarse -45%, range 114.4->79.3, p0.1 67.3->111.0) so it ships the very 13-20m wash it claimed to avoid, and the refusal's arithmetic is false: the table has two near-orthogonal adjacent-scale pairs (8.53m@71 vs 6.11m@-12 = 83deg; 1.09m@151 vs 0.73m@-117 = 88deg) and its bottom seven ratios are a sqrt2 ladder, not 'none repeated'.",
+      "gap": "The lattice class did not go away, only that instance: at 3x the current surface-above far band is a regular parallel diagonal corduroy with a hard near-black dashed line along crest lines (4.32% under L60 vs the plate's 0.625%), untouched this round because every term added lives below water. Material-only, our sea crop 0.05,0.45,0.52,0.70 vs surface-above-2 crop 0.05,0.52,0.35,0.85 is monochromatic (hueVar 0.006 / 1 hue vs 0.017 / 2, and -1's 0.078 / 2), R% 22.3 vs 42.1, median 71.1 vs 150.8, and octave tilt 0.93 vs 2.28 — flat energy at every scale where a real sea is swell-dominated.",
+      "history": [
+        {
+          "round": 1,
+          "score": 35,
+          "ts": "2026-08-15T16:59:21.630Z"
+        },
+        {
+          "round": 2,
+          "score": 43,
+          "ts": "2026-08-15T18:24:33.483Z"
+        },
+        {
+          "round": 3,
+          "score": 54,
+          "ts": "2026-08-15T19:44:41.623Z"
+        },
+        {
+          "round": 8,
+          "score": 57,
+          "ts": "2026-08-17T00:36:55.200Z"
+        },
+        {
+          "round": 8,
+          "score": 57,
+          "ts": "2026-08-17T02:20:46.801Z"
+        },
+        {
+          "round": 8,
+          "score": 57,
+          "ts": "2026-08-17T02:21:33.127Z"
+        },
+        {
+          "round": 9,
+          "score": 59,
+          "ts": "2026-08-22T01:48:20.118Z"
+        },
+        {
+          "round": 9,
+          "score": 59,
+          "ts": "2026-08-22T02:24:03.357Z"
+        },
+        {
+          "round": 10,
+          "score": 63,
+          "ts": "2026-08-22T05:59:13.472Z"
+        },
+        {
+          "round": 10,
+          "score": 63,
+          "ts": "2026-08-22T06:07:52.244Z"
+        },
+        {
+          "round": 11,
+          "score": 65,
+          "ts": "2026-08-22T21:40:49.673Z"
+        },
+        {
+          "round": 11,
+          "score": 65,
+          "ts": "2026-08-22T21:49:45.772Z"
+        },
+        {
+          "round": 12,
+          "score": 68,
+          "ts": "2026-08-23T01:25:13.691Z"
+        },
+        {
+          "round": 12,
+          "score": 68,
+          "ts": "2026-08-23T02:16:59.395Z"
+        },
+        {
+          "round": 13,
+          "score": 42,
+          "ts": "2026-08-23T06:46:47.078Z"
+        },
+        {
+          "round": 13,
+          "score": 42,
+          "ts": "2026-08-23T07:51:45.232Z"
+        },
+        {
+          "round": 14,
+          "score": 56,
+          "ts": "2026-08-23T11:31:48.136Z"
+        },
+        {
+          "round": 14,
+          "score": 56,
+          "ts": "2026-08-23T13:39:37.937Z"
+        },
+        {
+          "round": 15,
+          "score": 58,
+          "ts": "2026-08-23T18:16:11.861Z"
+        },
+        {
+          "round": 15,
+          "score": 58,
+          "ts": "2026-08-23T18:29:37.860Z"
+        },
+        {
+          "round": 16,
+          "score": 54,
+          "ts": "2026-08-23T23:51:02.213Z"
+        },
+        {
+          "round": 16,
+          "score": 54,
+          "ts": "2026-08-24T01:09:12.727Z"
+        },
+        {
+          "round": 34,
+          "score": 53,
+          "ts": "2026-08-28T14:32:00.931Z"
+        },
+        {
+          "round": 34,
+          "score": 53,
+          "ts": "2026-08-28T15:58:05.992Z"
+        }
+      ],
+      "shotTag": "watersurface-late-r34"
+    },
+    "sky": {
+      "status": "critiquing",
+      "round": 34,
+      "score": 58,
+      "verdict": "The standing night defect is genuinely closed — base hull went from 0.95x the water it stands in to 2.52x, with a 6.4:1 top-to-underside ramp — but the night still has no blacks and the clouds still have no internal form.",
+      "gap": "Cloud-only windows carry 6.7 code levels of internal variation against the reference cumulus's 27-42; at 4x ours is a blurred veil with polygonal edges where the plate has cauliflower silhouettes and self-shadowed flanks.",
+      "history": [
+        {
+          "round": 1,
+          "score": 40,
+          "ts": "2026-08-15T17:05:57.223Z"
+        },
+        {
+          "round": 2,
+          "score": 46,
+          "ts": "2026-08-15T18:24:21.627Z"
+        },
+        {
+          "round": 3,
+          "score": 48,
+          "ts": "2026-08-15T20:05:13.922Z"
+        },
+        {
+          "round": 34,
+          "score": 58,
+          "ts": "2026-08-28T14:04:38.811Z"
+        },
+        {
+          "round": 34,
+          "score": 58,
+          "ts": "2026-08-28T15:58:06.219Z"
+        }
+      ],
+      "shotTag": "sky-late-r34"
+    },
+    "postfx": {
+      "status": "critiquing",
+      "round": 31,
+      "score": 71,
+      "verdict": "THE REFUTATION IS CORRECT AND I REPRODUCE IT ON MY OWN INSTRUMENT, BUT ITS MAGNITUDES ARE ~2x HIGH AND THE SHIPPED CODE IS A NO-OP. Encoder control (one real window, scaled in LINEAR, chromaticity mathematically constant, 7 scales 0.5-2.0x, clipAny 0.00 throughout): godrays (1650,450) code G/B +0.79 %/oct, R% +2.07 pts/oct, sat -0.021/oct while linear is flat to 4 digits (0.5783->0.5792); grand-reef (750,675) +4.64 / +5.27 / -0.053 vs linear -0.14 / +0.02 / -0.0002. Builder quoted +1.59/+4.62 and +6.66/+6.76 — same sign, same mechanism, roughly double. Plate control -0.18 %/oct: the bias really does point opposite ways in the two subjects. On grand-reef the metric INVERTS the sign of both red and saturation (code +1.76 pts/oct and -0.0176/oct; linear -1.40 and +0.0141) exactly as claimed. Bypass repair is real and verified: ?nopostfx=1 godrays water rails clipAny 78.1-80.1% (clipRGB up to G 80.1 / B 71.7, p90 250), ?nopostfx=1&exposure=0.22 reads clipAny 0.00-0.13%, and the knob is an exact scalar (0.22 vs 0.44 = 2.0001-2.0003x linear luminance, linear G/B identical to 4 digits). whitenW ships as claimed: 9 shots identical to ?whiteneutral=0 on every column except p99.9 — hud 238.1->233.5 and shallows-reef 240.8->240.2 (both TOWARD shallows-reef-1's 235.3), seamoth 234.1->233.4. No regression anywhere: cave/deep-void/grand-reef/kelp/wreck bit-equal to r30.",
+      "gap": "The stated gap is derived against the wrong plate. 'Our godrays water red 0.94-1.18% vs godrays-1's 0.06-0.19%' compares a 40 m open-ocean shot to a 150 m frame at the one depth in LOOK.md's whole ramp where red is authored to exactly 0 (#00AA9C). At our own measured G/B of 0.780, LOOK.md authors #2C9BC8 = RGB(44,155,200), R% 22.0; we deliver R% 8.7. The sign of the standing red gap is backwards. Also: four consecutive rounds (28-31) have now been spent on colour-metric epistemology with no pixel improved — fix tools/measure.mjs to decode per pixel to linear before averaging, publish clipAny with every statistic, and give the next round a target derived from a window that matches OUR shot's depth and biome.",
+      "history": [
+        {
+          "round": 1,
+          "score": 34,
+          "ts": "2026-08-15T16:30:53.951Z"
+        },
+        {
+          "round": 2,
+          "score": 39,
+          "ts": "2026-08-15T17:27:31.240Z"
+        },
+        {
+          "round": 3,
+          "score": 47,
+          "ts": "2026-08-15T20:19:42.885Z"
+        },
+        {
+          "round": 4,
+          "score": 49,
+          "ts": "2026-08-16T06:25:03.673Z"
+        },
+        {
+          "round": 5,
+          "score": 48,
+          "ts": "2026-08-16T09:37:30.603Z"
+        },
+        {
+          "round": 8,
+          "score": 52,
+          "ts": "2026-08-17T01:08:34.982Z"
+        },
+        {
+          "round": 8,
+          "score": 52,
+          "ts": "2026-08-17T02:21:33.294Z"
+        },
+        {
+          "round": 14,
+          "score": 57,
+          "ts": "2026-08-23T11:42:51.023Z"
+        },
+        {
+          "round": 14,
+          "score": 57,
+          "ts": "2026-08-23T13:39:37.834Z"
+        },
+        {
+          "round": 15,
+          "score": 42,
+          "ts": "2026-08-23T17:53:17.111Z"
+        },
+        {
+          "round": 15,
+          "score": 42,
+          "ts": "2026-08-23T18:29:37.989Z"
+        },
+        {
+          "round": 16,
+          "score": 40,
+          "ts": "2026-08-23T21:26:24.954Z"
+        },
+        {
+          "round": 16,
+          "score": 40,
+          "ts": "2026-08-24T01:09:12.357Z"
+        },
+        {
+          "round": 17,
+          "score": 70,
+          "ts": "2026-08-24T04:33:09.308Z"
+        },
+        {
+          "round": 17,
+          "score": 70,
+          "ts": "2026-08-24T05:08:20.603Z"
+        },
+        {
+          "round": 22,
+          "score": 56,
+          "ts": "2026-08-24T10:26:06.443Z"
+        },
+        {
+          "round": 23,
+          "score": 40,
+          "ts": "2026-08-24T12:30:00.535Z"
+        },
+        {
+          "round": 23,
+          "score": 40,
+          "ts": "2026-08-24T12:32:48.217Z"
+        },
+        {
+          "round": 24,
+          "score": 40,
+          "ts": "2026-08-24T14:50:12.192Z"
+        },
+        {
+          "round": 24,
+          "score": 62,
+          "ts": "2026-08-24T15:15:19.973Z"
+        },
+        {
+          "round": 24,
+          "score": 62,
+          "ts": "2026-08-24T15:18:17.242Z"
+        },
+        {
+          "round": 25,
+          "score": 64,
+          "ts": "2026-08-24T17:39:53.880Z"
+        },
+        {
+          "round": 25,
+          "score": 64,
+          "ts": "2026-08-24T17:45:54.208Z"
+        },
+        {
+          "round": 26,
+          "score": 70,
+          "ts": "2026-08-24T20:26:59.037Z"
+        },
+        {
+          "round": 26,
+          "score": 70,
+          "ts": "2026-08-24T20:29:19.910Z"
+        },
+        {
+          "round": 27,
+          "score": 66,
+          "ts": "2026-08-24T23:43:02.686Z"
+        },
+        {
+          "round": 28,
+          "score": 70,
+          "ts": "2026-08-25T03:14:42.275Z"
+        },
+        {
+          "round": 29,
+          "score": 63,
+          "ts": "2026-08-25T05:20:11.852Z"
+        },
+        {
+          "round": 30,
+          "score": 68,
+          "ts": "2026-08-25T07:22:49.939Z"
+        },
+        {
+          "round": 31,
+          "score": 71,
+          "ts": "2026-08-25T09:59:13.916Z"
+        }
+      ],
+      "shotTag": "r31-crit"
+    },
+    "biomes": {
+      "status": "critiquing",
+      "round": 28,
+      "score": 63,
+      "verdict": "grand-reef LANDED and I reproduce it twice: on the builder's own water-only window ours px(120,360)-(460,660) vs grand-reef-2 px(600,64)-(1085,250), ungraded went 47.81 -> 36.55 against a plate at 35.6-38.7 (1.31x -> 1.01x), and the whole clean column now runs 43.4->33.2 against the plate water's 39.8->33.8. cave and shallows-reef ungraded are bit-identical to r27 on every column, so the no-regression claim is true. KELP IS A QUARTER-FIX ON A KNOB THAT CANNOT FINISH. Same window px(640,0)-(800,340): G 248.9 -> 208.2, lum 212.4 -> 163.2, against clean water in kelp-forest-1 px(20,60)-(110,170) at lum 44.2/G 58 and godrays-2 px(1080,180)-(1200,360) at 48.1/G 61 - still 3.7x, at 55m against plates at 15-29m. Two-point fit through the sRGB curve says only 55% of that window's linear green is level-driven: at level=0 it still reads G~174 vs a target of 46-83. The header admits a floor (G~127) and simultaneously claims 0.40 puts the blended far field at G 72 and the window was never re-measured after the change - the number the defect was defined on was not checked. G/B 0.660 at grand-reef was called a hit off a LOOK.md hex; the plate window says 0.522 on five separate windows, so it is a 1.26x miss and the brief's own rule was not applied to it.",
+      "gap": "kelp water level, 3.7x ungraded / 4.3x graded on water-only windows. level scales fog+scatter only; kelp_forest's light budget - skylight 0.82, the same class of term that fixed grand_reef's ambientFloor - was never tested, and neither was the safe_shallows leak's contribution to LEVEL (only to blue). Measure px(640,0)-(800,340) after every change.",
+      "history": [
+        {
+          "round": 1,
+          "score": 43,
+          "ts": "2026-08-15T15:54:58.991Z"
+        },
+        {
+          "round": 2,
+          "score": 58,
+          "ts": "2026-08-15T17:01:40.036Z"
+        },
+        {
+          "round": 3,
+          "score": 62,
+          "ts": "2026-08-15T18:19:16.989Z"
+        },
+        {
+          "round": 22,
+          "score": 52,
+          "ts": "2026-08-24T10:26:21.672Z"
+        },
+        {
+          "round": 28,
+          "score": 63,
+          "ts": "2026-08-25T03:14:25.993Z"
+        }
+      ],
+      "shotTag": "r28-crit"
+    },
+    "terrain": {
+      "status": "iterating",
+      "round": 34,
+      "score": 57,
+      "verdict": "The caustic net is the one claim that fully reproduces — a runtime ablation of uCausticsStrength on a frozen frame gives 2.02:1 peak-to-shadow on terrain-only near sand, exactly LOOK.md's target — but the round's actual objective failed: at matched metre scale (raycast: 0.40 m per 100 px, camera 3.9 m off the sand) our sand is still a soft 0.1-0.25 m camouflage mottle with no grain against the reference's uniform 1-3 px granular speckle, and the headline -13.7%/-14.5% A/B does not reproduce because changing terrain.js reshuffles the shared RNG and moves every plant in the crop.",
+      "gap": "The asset still has no surface: on terrain-only pixels (every other mesh hidden at runtime, same frozen frame) tileContrast/mean is 35.6-37.3% against the reference sand's 6.0% bright / 26.7% at matched mean luminance, and r7 lowered fine, mid, net AND coarse bands together by 5-20% instead of trading hard-edged contrast for broadband grain — detailRMS/mean fell 12.3%->10.7%, the wrong direction. The wired-in surface microstructure measures 1.12:1 on sand and 1.01:1 on the drop-off rock, i.e. inaudible exactly where LOOK.md wants material identity.",
+      "history": [
+        {
+          "round": 29,
+          "score": 58,
+          "ts": "2026-08-15T15:26:44.379Z"
+        },
+        {
+          "round": 1,
+          "score": 24,
+          "ts": "2026-08-15T15:52:34.485Z"
+        },
+        {
+          "round": 2,
+          "score": 35,
+          "ts": "2026-08-15T17:10:38.174Z"
+        },
+        {
+          "round": 3,
+          "score": 44,
+          "ts": "2026-08-15T18:47:49.391Z"
+        },
+        {
+          "round": 3,
+          "score": 44,
+          "ts": "2026-08-15T18:52:12.247Z"
+        },
+        {
+          "round": 4,
+          "score": 50,
+          "ts": "2026-08-16T05:54:53.923Z"
+        },
+        {
+          "round": 6,
+          "score": 54,
+          "ts": "2026-08-16T13:21:55.453Z"
+        },
+        {
+          "round": 7,
+          "score": 57,
+          "ts": "2026-08-16T20:21:07.795Z"
+        }
+      ],
+      "shotTag": "terrain-r34"
+    },
+    "flora": {
+      "status": "critiquing",
+      "round": 34,
+      "score": 52,
+      "verdict": "Round 33's buildGrass rewrite is real and verified — ribbed blades with a midrib, twist and collar, sized into LOOK.md's band, turf up from a 15000 cap to 20963/26199/24597 clumps — but flora's own surface grain carries ~2x the reference's octave energy and buries that geometry under hard-edged pepper, and the creepvine is still black origami.",
+      "gap": "Flora's own microstructure amplitude: near-plant window --crop=0.05,0.15,0.20,0.60 measures detail 24.53 / tileContrast 21.13 / octaves [12.48,13.94,17.38,21.16,22.18] against kelp-forest-3 --crop=0.10,0.60,0.30,0.95 at 22.70 / 11.83 / [6.45,6.36,7.00,8.59,12.09]; ablating with floraiso=1&flnosurf=1 takes detail 20.69->11.53 and the finest octave 11.30->7.18, and the grain-off tuft is visibly the better plant at 9x.",
+      "history": [
+        {
+          "round": 1,
+          "score": 46,
+          "ts": "2026-08-15T20:07:48.559Z"
+        },
+        {
+          "round": 7,
+          "score": 55,
+          "ts": "2026-08-16T20:11:00.218Z"
+        },
+        {
+          "round": 8,
+          "score": 51,
+          "ts": "2026-08-17T00:01:29.154Z"
+        },
+        {
+          "round": 8,
+          "score": 51,
+          "ts": "2026-08-17T02:21:33.397Z"
+        },
+        {
+          "round": 34,
+          "score": 52,
+          "ts": "2026-08-28T14:20:44.559Z"
+        },
+        {
+          "round": 34,
+          "score": 52,
+          "ts": "2026-08-28T15:58:06.103Z"
+        }
+      ],
+      "shotTag": "flora-late-r34"
+    },
+    "structures": {
+      "status": "critiquing",
+      "round": 32,
+      "score": 39,
+      "verdict": "Lifepod chroma and the cap profile are real, reproducible gains, but the wreck rebuild was refused on a hull window that is 25% non-hull and that is 1.5-3x the plate on every octave, and at magnification our plating has no plate tessellation at all.",
+      "gap": "Hull plating has no plate-to-plate tonal grid: texHull deliberately gives every plate identical albedo and SURF.hull.scale=0.006 caps surface.js at 0.30 m, so nothing in the pipeline can make the 2 m tessellation that is wreck-1's dominant read.",
+      "history": [
+        {
+          "round": 1,
+          "score": 52,
+          "ts": "2026-08-15T20:09:31.878Z"
+        },
+        {
+          "round": 1,
+          "score": 38,
+          "ts": "2026-08-15T20:18:25.317Z"
+        },
+        {
+          "round": 4,
+          "score": 46,
+          "ts": "2026-08-16T06:13:30.825Z"
+        },
+        {
+          "round": 5,
+          "score": 43,
+          "ts": "2026-08-16T09:49:57.041Z"
+        },
+        {
+          "round": 6,
+          "score": 52,
+          "ts": "2026-08-16T14:10:53.295Z"
+        },
+        {
+          "round": 7,
+          "score": 56,
+          "ts": "2026-08-16T20:01:21.691Z"
+        },
+        {
+          "round": 8,
+          "score": 62,
+          "ts": "2026-08-16T23:52:39.205Z"
+        },
+        {
+          "round": 8,
+          "score": 62,
+          "ts": "2026-08-17T02:19:58.013Z"
+        },
+        {
+          "round": 8,
+          "score": 62,
+          "ts": "2026-08-17T02:21:14.744Z"
+        },
+        {
+          "round": 32,
+          "score": 39,
+          "ts": "2026-08-25T12:32:52.995Z"
+        },
+        {
+          "round": 32,
+          "score": 39,
+          "ts": "2026-08-25T13:14:24.752Z"
+        }
+      ],
+      "shotTag": "structures-crit-r32"
+    },
+    "creatures": {
+      "status": "critiquing",
+      "round": 32,
+      "score": 44,
+      "verdict": "The reef eye and the grand-reef emitter now read; the flagship reaper does not - at 8x its eye is a gasket, its teeth are flat slabs, and at G/B 2.53 against water at 0.90 the animal sits outside its own medium.",
+      "gap": "Creatures are chromatically detached from the water they swim in: head window 881,391,178,188 gbLin 2.532 vs its water 60,60,90,70 at 0.903 (2.80x), where reference creature-close-4 reads 0.770 vs 0.787 (0.98x). CN_FOG_SCALE=0.50 buys albedo authority by half-unfogging every creature.",
+      "history": [
+        {
+          "round": 1,
+          "score": 45,
+          "ts": "2026-08-15T20:11:28.361Z"
+        },
+        {
+          "round": 4,
+          "score": 56,
+          "ts": "2026-08-16T06:13:07.808Z"
+        },
+        {
+          "round": 5,
+          "score": 59,
+          "ts": "2026-08-16T10:40:21.336Z"
+        },
+        {
+          "round": 7,
+          "score": 60,
+          "ts": "2026-08-16T20:04:11.466Z"
+        },
+        {
+          "round": 8,
+          "score": 51,
+          "ts": "2026-08-17T00:28:05.930Z"
+        },
+        {
+          "round": 8,
+          "score": 51,
+          "ts": "2026-08-17T02:21:33.509Z"
+        },
+        {
+          "round": 9,
+          "score": 41,
+          "ts": "2026-08-22T01:19:53.038Z"
+        },
+        {
+          "round": 10,
+          "score": 45,
+          "ts": "2026-08-22T05:08:55.960Z"
+        },
+        {
+          "round": 10,
+          "score": 45,
+          "ts": "2026-08-22T06:07:52.055Z"
+        },
+        {
+          "round": 12,
+          "score": 52,
+          "ts": "2026-08-23T02:08:50.033Z"
+        },
+        {
+          "round": 12,
+          "score": 52,
+          "ts": "2026-08-23T02:16:59.498Z"
+        },
+        {
+          "round": 13,
+          "score": 55,
+          "ts": "2026-08-23T06:37:51.691Z"
+        },
+        {
+          "round": 13,
+          "score": 55,
+          "ts": "2026-08-23T07:51:45.433Z"
+        },
+        {
+          "round": 14,
+          "score": 41,
+          "ts": "2026-08-23T11:59:41.423Z"
+        },
+        {
+          "round": 14,
+          "score": 41,
+          "ts": "2026-08-23T13:39:38.258Z"
+        },
+        {
+          "round": 15,
+          "score": 46,
+          "ts": "2026-08-23T18:23:24.407Z"
+        },
+        {
+          "round": 15,
+          "score": 46,
+          "ts": "2026-08-23T18:29:38.135Z"
+        },
+        {
+          "round": 16,
+          "score": 50,
+          "ts": "2026-08-23T23:04:49.378Z"
+        },
+        {
+          "round": 16,
+          "score": 50,
+          "ts": "2026-08-24T01:09:12.829Z"
+        },
+        {
+          "round": 17,
+          "score": 50,
+          "ts": "2026-08-24T04:33:01.144Z"
+        },
+        {
+          "round": 32,
+          "score": 44,
+          "ts": "2026-08-25T13:04:14.124Z"
+        },
+        {
+          "round": 32,
+          "score": 44,
+          "ts": "2026-08-25T13:14:24.618Z"
+        }
+      ],
+      "shotTag": "creatures-crit-r32"
+    },
+    "schooling": {
+      "status": "iterating",
+      "round": 2,
+      "score": 56,
+      "verdict": "The midwater is populated and the predator beat genuinely reads, but at 1x the schools resolve as low-contrast grey pepper rather than fish: fish-only crops measure luminance range 69-101 / tile contrast 4.3-5.6 against school-1.jpg's 154 / 17.0, and in kelp-forest the module is net-negative, darkening 17.2% of the frame with a speckle slab.",
+      "gap": "Contrast DISTRIBUTION, not density: our fish blobs have a peak/median contrast ratio of 1.65 (median 16, p90 27) where the reference school measures 6.3 (median 15, p90 97). Make ~5-10 percent of fish flash to +80..+120 luminance over local water while the rest dissolve toward it, and cut the 27-61m population (2000 of 3360 fish, all 2-4.5 px) that only contributes noise.",
+      "history": [
+        {
+          "round": 1,
+          "score": 72,
+          "ts": "2026-08-15T19:49:33.067Z"
+        },
+        {
+          "round": 1,
+          "score": 56,
+          "ts": "2026-08-15T20:05:43.633Z"
+        }
+      ],
+      "shotTag": "schooling-r17"
+    },
+    "movement": {
+      "status": "critiquing",
+      "round": 16,
+      "score": 66,
+      "verdict": "hullSlide is a real fix I reproduced bit-identically three times (Aurora hull, weld 7.267s -> 0.017s, travel 1.49m -> 27.33m) and the builder's refutation of the brief's _moveHorizontal attribution is correct, but blockNormal does nothing on an independent 48-face scan and the hull fix leaves the diver inside the wreck.",
+      "gap": "hullSlide restores motion without depenetration: at aurora-stern bearing 0 r15 never enters the collision shell (min standoff 0.619m = colRadius, 0/120 frames inside) while r16 is inside on 98/120 with the body centre 15mm from a triangle - a lid traded for a ghost.",
+      "history": [
+        {
+          "round": 1,
+          "score": 63,
+          "ts": "2026-08-16T00:20:11.295Z"
+        },
+        {
+          "round": 9,
+          "score": 68,
+          "ts": "2026-08-22T01:39:24.232Z"
+        },
+        {
+          "round": 9,
+          "score": 68,
+          "ts": "2026-08-22T02:24:03.235Z"
+        },
+        {
+          "round": 10,
+          "score": 61,
+          "ts": "2026-08-22T05:36:31.322Z"
+        },
+        {
+          "round": 10,
+          "score": 61,
+          "ts": "2026-08-22T06:07:52.150Z"
+        },
+        {
+          "round": 11,
+          "score": 76,
+          "ts": "2026-08-22T20:42:28.418Z"
+        },
+        {
+          "round": 11,
+          "score": 76,
+          "ts": "2026-08-22T21:49:44.866Z"
+        },
+        {
+          "round": 12,
+          "score": 72,
+          "ts": "2026-08-23T02:12:54.134Z"
+        },
+        {
+          "round": 12,
+          "score": 72,
+          "ts": "2026-08-23T02:16:59.129Z"
+        },
+        {
+          "round": 13,
+          "score": 73,
+          "ts": "2026-08-23T07:40:08.918Z"
+        },
+        {
+          "round": 13,
+          "score": 73,
+          "ts": "2026-08-23T07:51:45.337Z"
+        },
+        {
+          "round": 14,
+          "score": 58,
+          "ts": "2026-08-23T13:21:42.502Z"
+        },
+        {
+          "round": 14,
+          "score": 58,
+          "ts": "2026-08-23T13:39:38.052Z"
+        },
+        {
+          "round": 15,
+          "score": 68,
+          "ts": "2026-08-23T17:52:01.090Z"
+        },
+        {
+          "round": 15,
+          "score": 68,
+          "ts": "2026-08-23T18:29:37.761Z"
+        },
+        {
+          "round": 16,
+          "score": 66,
+          "ts": "2026-08-24T01:05:38.055Z"
+        },
+        {
+          "round": 16,
+          "score": 66,
+          "ts": "2026-08-24T01:09:12.599Z"
+        }
+      ],
+      "shotTag": "movement-crit-r16"
+    },
+    "survival": {
+      "status": "passed",
+      "round": 9,
+      "score": 74,
+      "verdict": "The loop finally has teeth and every number reproduces independently - crush kills at 7.5 HP/s on --route=deep (t=14.6s, respawn t=19.2s) and a quadratic 7.5->26 HP/s drown kills in 4.8s on --route=descend - but at 100m with a full tank the game is still completely silent, so the named '100m must be dangerous' defect closed only because the harness starts that route at 35% air.",
+      "gap": "At 100m on a full 135-unit tank: pressureStress 0.000, crushRate 0.00, warnings [] - 77.7s of air against a 30.9s ascent, a 2.5x margin, and no rim because SUITS.none=200m puts the amber band at 144m. Worse, NO shot and NO play route ever enters that 144-200m warning band (deep starts at 280m, descend tops out at 99.8m), so the continuous-pressure redesign's entire middle is unmeasurable by any tool in the repo. Lower SUITS.none toward ~140m or make the ascent tax bite on a full tank, and add a route or shot that sits at 160m.",
+      "history": [
+        {
+          "round": 1,
+          "score": 68,
+          "ts": "2026-08-16T00:45:46.184Z"
+        },
+        {
+          "round": 9,
+          "score": 74,
+          "ts": "2026-08-22T01:15:09.898Z"
+        },
+        {
+          "round": 9,
+          "score": 74,
+          "ts": "2026-08-22T02:24:03.120Z"
+        }
+      ],
+      "shotTag": "survival-crit-r9"
+    },
+    "tools": {
+      "status": "critiquing",
+      "round": 34,
+      "score": 41,
+      "verdict": "Scanner genuinely repaired and the node's cause correctly ablated, but the module's own headline feature still lights nothing and two self-claims fail on the frames the builder captured.",
+      "gap": "The flashlight casts no light: +0.31% on the cave floor and +1.33% on the night seabed at meter=0, against +134% on the tool's own head — the pass runs, at ~1/8 of a visible amplitude.",
+      "history": [
+        {
+          "round": 1,
+          "score": 62,
+          "ts": "2026-08-16T00:28:46.575Z"
+        },
+        {
+          "round": 1,
+          "score": 48,
+          "ts": "2026-08-16T01:25:16.625Z"
+        },
+        {
+          "round": 4,
+          "score": 58,
+          "ts": "2026-08-16T06:38:42.712Z"
+        },
+        {
+          "round": 5,
+          "score": 64,
+          "ts": "2026-08-16T10:16:40.052Z"
+        },
+        {
+          "round": 6,
+          "score": 66,
+          "ts": "2026-08-16T14:24:02.796Z"
+        },
+        {
+          "round": 8,
+          "score": 34,
+          "ts": "2026-08-17T01:22:11.470Z"
+        },
+        {
+          "round": 8,
+          "score": 34,
+          "ts": "2026-08-17T02:21:33.609Z"
+        },
+        {
+          "round": 32,
+          "score": 38,
+          "ts": "2026-08-25T13:01:22.481Z"
+        },
+        {
+          "round": 32,
+          "score": 38,
+          "ts": "2026-08-25T13:14:24.491Z"
+        },
+        {
+          "round": 34,
+          "score": 41,
+          "ts": "2026-08-28T15:54:18.576Z"
+        },
+        {
+          "round": 34,
+          "score": 41,
+          "ts": "2026-08-28T15:58:05.657Z"
+        }
+      ],
+      "shotTag": "tools-crit-r34"
+    },
+    "vehicles": {
+      "status": "critiquing",
+      "round": 13,
+      "score": 65,
+      "verdict": "Every published number reproduces on my own captures and the named defect genuinely moved (crushed 6.19% -> 2.34% over four boots, 2.317-2.399, against plates 0.015%/0.000%), and the postfx-AO root cause is proven by an ablation whose water control is byte-stable, but the shipped frame still shows two solid-black wedges across the inboard console faces, the interior midtones are still half the plate (p25 13.7 vs 29.7/26.8, median 34.6 vs 68.1/73.8), and the round never measured that DoF throws away 60% of the interior's own detail (MFD detailRMS 5.0-5.3 shipped vs 11.45 with DoF off vs the plate's 12.68).",
+      "gap": "The dashboard's two largest surfaces are still literally RGB(0,0,0); mean absolute deviation from the two plates across p10/p25/median/p75/p90/p99 is 27.4%, i.e. back to round 11's 27.2% rather than past it, and the exterior hull still carries 1.7x the plate's tileContrast (30.8/31.6 vs 18.2) and 2.2x its detail with every octave 2.4-2.6x hot, so the surface non-negotiable is untouched.",
+      "history": [
+        {
+          "round": 1,
+          "score": 48,
+          "ts": "2026-08-16T01:23:00.633Z"
+        },
+        {
+          "round": 4,
+          "score": 58,
+          "ts": "2026-08-16T06:19:52.211Z"
+        },
+        {
+          "round": 5,
+          "score": 57,
+          "ts": "2026-08-16T09:08:51.258Z"
+        },
+        {
+          "round": 6,
+          "score": 58,
+          "ts": "2026-08-16T13:43:05.065Z"
+        },
+        {
+          "round": 7,
+          "score": 61,
+          "ts": "2026-08-16T20:17:03.671Z"
+        },
+        {
+          "round": 9,
+          "score": 59,
+          "ts": "2026-08-22T02:15:58.199Z"
+        },
+        {
+          "round": 9,
+          "score": 59,
+          "ts": "2026-08-22T02:24:03.468Z"
+        },
+        {
+          "round": 10,
+          "score": 62,
+          "ts": "2026-08-22T06:01:46.614Z"
+        },
+        {
+          "round": 10,
+          "score": 62,
+          "ts": "2026-08-22T06:07:52.340Z"
+        },
+        {
+          "round": 11,
+          "score": 64,
+          "ts": "2026-08-22T21:05:07.345Z"
+        },
+        {
+          "round": 11,
+          "score": 64,
+          "ts": "2026-08-22T21:49:45.150Z"
+        },
+        {
+          "round": 12,
+          "score": 63,
+          "ts": "2026-08-23T01:01:56.280Z"
+        },
+        {
+          "round": 12,
+          "score": 63,
+          "ts": "2026-08-23T02:16:59.291Z"
+        },
+        {
+          "round": 13,
+          "score": 65,
+          "ts": "2026-08-23T07:17:55.744Z"
+        },
+        {
+          "round": 13,
+          "score": 65,
+          "ts": "2026-08-23T07:51:45.136Z"
+        }
+      ],
+      "shotTag": "vehicles-crit-r13"
+    },
+    "base": {
+      "status": "critiquing",
+      "round": 7,
+      "score": 58,
+      "verdict": "Real, independently reproduced gains - the base is finally an air source (O2 held 75 to 75 over 12 simulated seconds inside the observatory), clipping is gone, and 48 compiled fragment programs genuinely carry the surface term - but the headline exterior surface number was measured across a crop containing 15+ schooling fish and a ray fin, and on fish-free plating detailRMS fell 15.83 to 9.12 against the reference's 18.39.",
+      "gap": "The night hull is the biggest miss and the one claim that is measurably false. On the base's own crop ours reads median 15.1 / p99 32.4 / detailRMS 3.09 / tileContrast 2.86 against night-shallows-1's base at 49.2 / 133.3 / 18.99 / 15.67: the real night habitat is 3.3x brighter in the body, 6x more detailed, and covered in lit window bands and cyan LED strakes, while ours is a near-black smudge. HULL_DEPTH_RESPONSE 0.34 plus exteriorShade cured the daylight ghost by deleting the night.",
+      "history": [
+        {
+          "round": 1,
+          "score": 68,
+          "ts": "2026-08-15T23:47:54.659Z"
+        },
+        {
+          "round": 1,
+          "score": 55,
+          "ts": "2026-08-16T00:29:53.493Z"
+        },
+        {
+          "round": 7,
+          "score": 58,
+          "ts": "2026-08-16T18:53:24.133Z"
+        }
+      ],
+      "shotTag": "base-crit-r7"
+    },
+    "ui": {
+      "status": "critiquing",
+      "round": 6,
+      "score": 71,
+      "verdict": "Three of the four assigned defects are genuinely fixed and better evidenced than anything else in this repo — the setState latch provably refuses tools.js's openPDA, the marker cull drops labels 7 to 0 and reverts to within 1% when switched off, and the 280m/680m warning bleed no longer reproduces in the exact grand-reef to deep-void order — but the PDA glass only got halfway to hud-4.jpg and the blind trial was still 4/4.",
+      "gap": "The HUD's shape language, not its behaviour, is what gives it away: the vitals cluster trails two connector hairlines that end in near-invisible anchor dots on an element the reference never wires at all, the vehicle readout is three identical stacked parallelograms where seamoth-cockpit-1 has one two-cell asymmetric sheet (wrench+bolt sharing a row, temperature hooked below), and the depth bracket is a filled navy bowl measuring detailRMS 43.4 / sat 0.85 against the reference arc's 13.6 / 0.55.",
+      "history": [
+        {
+          "round": 1,
+          "score": 76,
+          "ts": "2026-08-16T00:14:00.749Z"
+        },
+        {
+          "round": 1,
+          "score": 66,
+          "ts": "2026-08-16T00:54:37.128Z"
+        },
+        {
+          "round": 6,
+          "score": 71,
+          "ts": "2026-08-16T13:37:51.981Z"
+        }
+      ],
+      "shotTag": "ui-crit-r6"
+    },
+    "audio": {
+      "status": "critiquing",
+      "round": 2,
+      "score": 65,
+      "verdict": "A measurably real, click-free biome soundscape (156 Hz in the abyss to 7011 Hz in air; waterline 448 to 7629 Hz in 1.2 s) wrapped around a game that never calls it: no module invokes ctx.get('audio'), so scanning, harvesting, crafting, pickups and the PDA are all silent while ui.js's private AudioContext plays square-wave beeps past the limiter, muffle and mute key.",
+      "gap": "The leviathan roar is inaudible exactly where it matters. Stereo-summed tap of the live master, 3 roars per site: Safe Shallows 12 m = +5.5/+6.7/+6.3 dB RMS (+8.4/+8.9/+8.1 dB peak) over a -24.6 dB bed, but Grand Reef 280 m = -0.9/-0.4/-3.7 dB over a -13.2 dB bed and Lost River 678 m = +0.1/+0.4/-1.3 dB over a -14.1 dB bed. Deep beds run 11 dB hotter than the shallows, the limiter already pins peaks at -5.0 to -5.4 dBFS in every biome, and spec.duck (0.34-0.38 over 2.2-2.6 s) is recovering before the call's 0.8-1.6 s attack peaks. Cut grand-reef-deep 1.0->0.45, lost-river-hollow 0.95->0.45, blood-kelp-dread 1.0->0.45, void-abyss 0.85->0.40, WATER.bellDeep +9.5->+4 dB, pressure drone 0.24->0.10 to land the deep bed near the shallows' -22 dB, and deepen the leviathan duck to ~0.12 held to t+dur*0.35, released over dur+1.5 s. Target >=+6 dB RMS and >=+8 dB peak at 280 m and 678 m. Same pass: gate the unprompted roar on hostility (safe_shallows is 0.05 and currently gets a reaper every ~158 s).",
+      "history": [
+        {
+          "round": 1,
+          "score": 72,
+          "ts": "2026-08-16T00:38:19.562Z"
+        },
+        {
+          "round": 1,
+          "score": 65,
+          "ts": "2026-08-16T01:16:29.204Z"
+        }
+      ],
+      "shotTag": "audio-r2"
+    },
+    "whole-game": {
+      "status": "critiquing",
+      "round": 32,
+      "score": 42,
+      "verdict": "14/14 on the fair subset - removing the four unjudgeable pairs changed nothing. The leak was never the pairing.",
+      "gap": "Water SURFACE now decides more pairs than any other category (4 of 14): a hard black/cyan binary mask with no intermediate values, and sun glitter that is a perfectly regular orthogonal lattice of ~12 identical columns",
+      "history": [
+        {
+          "round": 1,
+          "score": 34,
+          "ts": "2026-08-16T06:42:33.921Z"
+        },
+        {
+          "round": 5,
+          "score": 38,
+          "ts": "2026-08-16T10:56:48.037Z"
+        },
+        {
+          "round": 2,
+          "score": 38,
+          "ts": "2026-08-16T11:02:13.531Z"
+        },
+        {
+          "round": 6,
+          "score": 41,
+          "ts": "2026-08-16T14:55:30.347Z"
+        },
+        {
+          "round": 3,
+          "score": 41,
+          "ts": "2026-08-16T15:14:53.832Z"
+        },
+        {
+          "round": 7,
+          "score": 43,
+          "ts": "2026-08-16T21:05:51.561Z"
+        },
+        {
+          "round": 4,
+          "score": 43,
+          "ts": "2026-08-16T21:11:07.031Z"
+        },
+        {
+          "round": 8,
+          "score": 30,
+          "ts": "2026-08-17T02:04:31.907Z"
+        },
+        {
+          "round": 5,
+          "score": 15,
+          "ts": "2026-08-17T02:41:07.002Z"
+        },
+        {
+          "round": 12,
+          "score": 45,
+          "ts": "2026-08-23T00:26:00.210Z"
+        },
+        {
+          "round": 12,
+          "score": 45,
+          "ts": "2026-08-23T02:16:59.608Z"
+        },
+        {
+          "round": 13,
+          "score": 35,
+          "ts": "2026-08-23T02:53:27.500Z"
+        },
+        {
+          "round": 13,
+          "score": 45,
+          "ts": "2026-08-23T07:51:45.528Z"
+        },
+        {
+          "round": 32,
+          "score": 36,
+          "ts": "2026-08-25T10:37:06.872Z"
+        },
+        {
+          "round": 32,
+          "score": 42,
+          "ts": "2026-08-25T13:14:25.020Z"
+        }
+      ],
+      "shotTag": "blind-r32"
+    }
+  }
+}
