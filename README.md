@@ -58,6 +58,7 @@ Judging "does this look right" required tools that don't lie:
 - **`tools/blind.mjs`** — normalises both sides (identical crop, size, JPEG quality and mtime) so a critic judging "which is the real game" cannot cheat on metadata.
 - **`tools/verify.mjs`** — the build gate. Boots the game, renders, fails on shader errors, module failures, empty frames or an fps collapse. Wired to a pre-commit hook.
 - **`tools/play.mjs`** — drives real input through six routes (dive, explore, descend, pressure, deep, surface) to test that it is a *game*, not a screenshot.
+- **`tools/perfprobe.mjs`** — drives the REAL `requestAnimationFrame` loop and swims like a player, reporting a per-second series, per-module update cost, browser long tasks, and the shader programs compiled during each stall. Added late, after a human played the game and found in one minute a defect the other five tools had missed for 35 rounds.
 
 ### What the loop actually found
 
