@@ -164,7 +164,11 @@ float uwCausticOcclusion(vec3 wp) {
     float perp = length(d - uSunDir * t);   // miss distance
     // Only occluders BETWEEN the point and the sun cast anything.
     float ahead = step(0.0, t);
-    float shade = 1.0 - smoothstep(o.w * 0.45, o.w * 1.35, perp);
+    // Penumbra widens with DISTANCE to the occluder, not with its radius. The
+    // first version keyed both edges to o.w alone, so a pebble and a whale threw
+    // equally crisp shadows and neither softened with range.
+    float pen = o.w * 1.35 + max(t, 0.0) * 0.085;
+    float shade = 1.0 - smoothstep(o.w * 0.45, pen, perp);
     // Contact softening: a distant occluder throws a weaker, vaguer shadow.
     shade *= exp(-max(t, 0.0) * 0.055);
     vis *= 1.0 - live * ahead * shade * 0.92;

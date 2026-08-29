@@ -796,6 +796,206 @@
  * run's PNGs under the tag — the same trap round 17 recorded. Check the shot
  * count line before quoting anything.
  *
+ * ROUND 35 - THE REPEAT IS THE RELATIVE PHASE, NOT THE TABLE; THE SNELL RIM WAS
+ * COUNTING THE MEDIUM TWICE; AND THE "MONOCHROMATIC SEA" DOES NOT REPRODUCE
+ * AGAINST THE ONLY ABOVE-WATER PLATE THAT SHARES THIS SHOT'S FRAMING.
+ *
+ * FIRST, THE ARITHMETIC ROUND 33 GOT WRONG, CHECKED RATHER THAN ACCEPTED.
+ * Round 33 refused an "orthogonal lattice" instruction with: thirteen headings
+ * "not symmetric about the wind and containing no orthogonal pair at a shared
+ * scale", ratios "none of them a small rational and none repeated". All three
+ * clauses are false, and here is the enumeration:
+ *
+ *   - FOUR pairs sit within 3 deg of orthogonal: (96.4, 1.57) 87 deg,
+ *     (57.7, 8.53) 90 deg EXACTLY, (4.37, 2.23) 87 deg, (1.09, 0.73) 88 deg.
+ *     Two of those are ADJACENT scales (83 deg and 88 deg separations).
+ *   - The successive ratios 1.396 / 1.398 / 1.405 / 1.395 are four consecutive
+ *     values of sqrt(2) to within 0.7%, and 1.42 / 1.44 / 1.49 continue the
+ *     same ladder: seven consecutive ratios inside 5.5% of sqrt(2).
+ *   - A sqrt(2) ladder makes every SECOND component a 2:1 harmonic. Five pairs
+ *     are within 5% of 2:1 (8.53/4.37, 6.11/3.11, 4.37/2.23, 3.11/1.57,
+ *     2.23/1.09) and two more are within 1% of 4:1 (34.3/8.53, 4.37/1.09).
+ *
+ * So the premise the refusal denied was real. The CONCLUSION it reached - do
+ * not retable - turns out to be right anyway, for a reason nobody had measured,
+ * and that is the useful half of this round.
+ *
+ * WHY RETABLING CANNOT WORK, WITH THE SEARCH THAT SHOWS IT. For a sum of plane
+ * waves the slope autocorrelation is exactly
+ *
+ *     R(tau) / R(0) = sum (a_i k_i)^2 cos(k_i . tau) / sum (a_i k_i)^2
+ *
+ * - phase-independent, so it is a property of the TABLE alone. The shipped
+ * table peaks at 0.8058 over lags of 1.5-30 m and 0.8698 over 1.5-90 m: 80% of
+ * the slope variance re-aligns with itself at a finite lag, which is what a
+ * corduroy is as a number. I then ran 12,000 constrained candidate tables
+ * (headings free, wavelengths +-20%, sigma pinned, penalties on near-orthogonal
+ * and near-rational pairs) through a full polar sweep. The best found moves the
+ * 1.5-30 m peak to 0.7183 and makes the 1.5-90 m peak WORSE, 0.8698 -> 0.9301.
+ * A finite sum of sinusoids is almost-periodic: widen the lag window and its
+ * autocorrelation returns arbitrarily close to 1. A table cannot be made
+ * non-repeating. Only the FIELD can.
+ *
+ * (A minimal nudge - headings within 12 deg, wavelengths within 3.5% - does
+ * take the named defects from 4 orthogonal and 15 harmonic pairs to 2 and 3,
+ * at a 1.5-30 m peak of 0.7861. It is NOT shipped: it moves the peak by 2.4%,
+ * which is inside what the same measurement does under a 3% wavelength change,
+ * and every foam, LOD and roughness constant in this file was calibrated
+ * against the current wavelengths. Removing a defect that measurement says is
+ * not the cause, at the price of invalidating six rounds of calibration, is not
+ * a trade worth making. The table is unchanged.)
+ *
+ * WHAT ACTUALLY PINS THE PATTERN: ONE WARP FOR THIRTEEN COMPONENTS. Round 8's
+ * waveWarp displaces the position the WHOLE spectrum is sampled at by the same
+ * vector. A common displacement bends every crest, but it moves all thirteen
+ * components together, so the RELATIVE phase between any two of them is a rigid
+ * function of position and the interference pattern they make is fixed. Round 9
+ * then weighted the warp by wavelength, which put the 1-6 m band - 80% of the
+ * slope variance, by (a k)^2 - on 0.18 of the warp, so within the band that
+ * carries the corduroy the relative phase moves by at most about 0.2 rad
+ * anywhere in the frame.
+ *
+ * Measured on the DISPLACED height field rather than on the table (a 256x256
+ * grid over 128 m, warp and groups included, the slope autocorrelation taken by
+ * FFT), the shipped build peaks at 0.6096 at a 16 m lag. Five components have a
+ * period along that axis within 6% of 16 m or of 16/7 and 16/8 m - 13.31 m at
+ * 15.2, 6.11 at 16.3, 4.37 at 16.9, 2.23 at 2.28 x 7, 1.57 at 2.02 x 8. That is
+ * the corduroy, located.
+ *
+ * THE FIX: give each component its own phase field. wavePhase() (in WARP_GLSL,
+ * called by BOTH stages so geometry and normal cannot drift apart) rotates the
+ * shared warp by a per-component golden-angle rotation and adds an independent
+ * phase field of period PHASE_N x that component's own wavelength. Because the
+ * field's frequency scales with the component's own k, one amplitude constant
+ * bounds the phase gradient for every component at uPhaseAmp / PHASE_N.
+ *
+ *   uPhaseAmp   peak, lags > 10 m, t = 11.3 s / 47.9 s   max |grad phi| / k
+ *     0                0.6096  /  0.5951                      0
+ *     0.7              0.4344  /  0.4234                    0.117
+ *     0.9              0.3853  /  0.3942                    0.150
+ *     1.1              0.3541  /  0.3609                    0.183
+ *
+ * 0.9 ships: a 37% cut in the repeat, reproducing on two independent time
+ * samples. Three things make this cheap and safe rather than another hack:
+ *
+ *   - the gradient of the added term is carried EXACTLY (kOff), so the analytic
+ *     normal is the true gradient of the drawn height field. Unlike the shared
+ *     warp, whose 6% gradient error this file has carried since round 8, this
+ *     term introduces no approximation at all.
+ *   - it is drawn with a smoothstepped triangle, not a sinusoid. A sin/cos pair
+ *     per component per pixel AND per vertex, on a 328k-triangle disc that fills
+ *     the frame, measured 118.7 -> 75.9 fps on surface-above; phaseWave() is
+ *     fract + abs + four multiplies and gives the derivative for free.
+ *   - the CPU mirror moves with the uniform, INCLUDING under ?ws:uPhaseAmp:0,
+ *     so waterHeightAt() never describes a different surface from the one the
+ *     shader draws. A boat floating half a metre off the water is the failure
+ *     mode this guards.
+ *
+ * Cost, measured as a stash A/B on one tree in one session (four isolated
+ * shots, capture.mjs stepped fps): surface-above 80.9 -> 78.5, surface-pod
+ * 70.5 -> 72.7, shallows-reef 62.3 -> 64.2, godrays 92.5 -> 84.8. Three of four
+ * inside the noise; godrays -8%. NOTE for the next agent: the 118.7 fps this
+ * file's first capture of the session recorded for surface-above is the
+ * warm-up artefact capture.mjs's own comment warns about, and I nearly spent a
+ * round optimising against it. Take the control from the SAME session.
+ *
+ * THE NEAR-BLACK DASHES ARE REAL AND ARE NOT THE WAVES. Measured on the 20-50%
+ * band below the horizon, water only (the scanner tool cropped out - it owns
+ * the whole sub-L30 population and contaminated my first three readings):
+ *
+ *                       mean   <L60    <L45   octaves fine->coarse    tilt
+ *   round 34            70.4  27.21%  2.45%  11.10 11.12 11.36 10.67 8.98  0.81
+ *   surface-above-1    101.6   0.00%  0.00%   4.63  5.83  6.42  7.48 8.38  1.81
+ *   surface-above-2     72.0  46.01% 23.78%  19.91 26.21 24.88 19.13       0.96
+ *
+ * and the plate reads 0.000% under L60 in EVERY band from the horizon down to
+ * 64% of the way to the bottom of frame. Ablation says where ours comes from:
+ * ?ws:uDipDarken:1 takes it 19.14% -> 4.96%, ?ws:uCrestLift:0 takes it to
+ * 11.05%. Three multiplicative darkeners - uDipNear 0.45, uDipDarken 0.29 at
+ * the nadir, the crest term 0.68 in a trough - compound to 0.12x on a wave face
+ * turned toward the eye, and nothing holds the pixel off the floor there
+ * because Fresnel and haze are both near zero on that facet. LOOK.md rule 5
+ * says what should: a fogged frame has no true blacks and the lift is
+ * atmosphere, not a curve. Here the atmosphere is the top metre's own
+ * backscatter, uSurfaceScatter, and it was arriving as an addition of 0.0016 /
+ * 0.0125 / 0.0140 against a term it had to floor. uFloorLift is that floor,
+ * applied in quadrature so the lit water is untouched. See its own block for
+ * the sweep and for the coarse-octave cost it does not pay for itself.
+ *
+ * Note surface-above-2, listed in PLATES.md as this shot's PRIMARY: it reads
+ * 46% under L60 in the same band. The two above-water plates disagree about the
+ * black content of a daylight sea by 46 points. Only surface-above-1 shares
+ * this shot's framing (eye near the water, 16:9, daylight, HUD), and it is the
+ * one this file has been calibrated against since round 15.
+ *
+ * THE SNELL RIM WAS COUNTING THE MEDIUM'S BLUR TWICE. rough is built from
+ * lostW / lostD, which are driven by foot = dist * uPixelScale + scatter, and
+ * scatter is the multiple-scattering blur of the water between the eye and the
+ * interface. spread, three lines above rimF, is that same scatter expressed as
+ * an incidence width. Looking up through 12 m of water the scattering term
+ * dominates the geometric footprint by an order of magnitude, every component
+ * reads as LOD-lost and rough saturates on its own 0.78 ceiling, so rimF asks
+ * for a rim a third of the way from the critical angle to the nadir. uRimGeo
+ * splits them: the facet term now sees only the pixel's own footprint, and the
+ * medium is counted once, in spread. ?ws:uRimGeo:0 is exactly round 33.
+ *
+ * WHAT I COULD NOT CONFIRM, AND WHY THE NEXT AGENT SHOULD NOT QUOTE IT. The
+ * round-34 brief called uRimRough 0.45 a regression that "halved the 18 m
+ * ceiling" - range 114.4 -> 79.3, p0.1 67.3 -> 111.0, octaves 2-5 down 45-62%.
+ * At 1920x1080 on the godrays framing dollied to 18 m, ?ws:uRimRough:0 and the
+ * full round-33 revert measure IDENTICAL to the shipped build to three figures
+ * on seven different crops. At 12 m, on the round-34 tree, one run did show a
+ * difference of that size and sign (p0.1 63.1 vs 21.3, coarsest octave 2.86 vs
+ * 5.51) - and on this tree the same three arms agree to 1%. The statistics
+ * behind the claim are p0.1 and the coarsest octave of a single up-look crop,
+ * both of which a single large TIR patch moves by a factor of two, and whether
+ * such a patch lands in the crop depends on the wave phase. So the DOUBLE-COUNT
+ * is fixed because the code proves it is there, not because that measurement
+ * held up. If you want to re-open it, measure the AREA under a luminance rather
+ * than a percentile, over several yaws.
+ *
+ * ALSO: my ad-hoc depth driver, and capture.mjs, are reproducible to the last
+ * digit within a session EXCEPT for the first page load after the warm-up,
+ * which differs in the third figure. Order your variants so the arm you care
+ * about is never first, or discard the first.
+ *
+ * "GIVE THE SEA MORE THAN ONE HUE" IS REFUSED, WITH THE PLATE. The brief cited
+ * hueVar 0.006 with 1 bucket against "the plate's 0.017 with 2". Measured on
+ * surface-above-1, band by band, water only:
+ *
+ *                       ours hueVar / buckets    plate hueVar / buckets
+ *   0-20% below horizon      0.0036 / 1               0.0049 / 2
+ *   20-50%                   0.0072 / 1               0.0103 / 2
+ *
+ * The framing-matched plate's own water is 94-97% inside ONE 30-degree hue
+ * bucket, and its hue moves 0 degrees across its luminance range (199 -> 199 by
+ * quintile) where ours moves 4. We are 0.0013-0.0031 of hue variance below a
+ * plate that is itself monochromatic. surface-above-2 does read 0.030-0.072
+ * with 2-3 buckets - but it is a deep-navy ultrawide whose water measures G/B
+ * 0.45-0.73 against surface-above-1's 0.96, it reads 46% of that band under
+ * L60 against the other plate's 0.000%, and PLATES.md lists its aspect and
+ * composition as unusable. The two plates do not describe the same ocean, and
+ * round 17 already recorded that they disagree by more than any term in this
+ * file can span. I am not building a hue term on a 0.002 gap against one plate
+ * and a 0.03 gap against another that contradicts it on every other axis.
+ *
+ * WHAT IS STILL OPEN, in the order I would spend the next round:
+ *   1. The octave TILT. Ours runs 0.78-1.34 fine-to-coarse where
+ *      surface-above-1 runs 1.81-2.00 - the plate's energy climbs with scale
+ *      and ours is flat. That is "wave bodies versus texture", it is the one
+ *      axis where BOTH above-water plates agree against us, and uFloorLift
+ *      spends 26% of the coarse octave rather than earning it.
+ *   2. The far-field foam. ?nofoam takes the 0-20% band's finest octave 7.14 ->
+ *      5.61 against the plate's 4.26, so roughly 60% of our excess fine energy
+ *      out there is whitecap, on a band where round 17 measured our coverage at
+ *      15x the plate's. uFoamFarBar exists, ships at 0, and was never swept.
+ *   3. uDipNear's axis. dsteep is the flat-water refraction of the VIEW
+ *      direction, so it is a function of camera pitch and eye height, not of
+ *      the water: surface-above (6 m, -8) lands at 0.91 and surface-pod (1.2 m,
+ *      -4) at 0.45, and the same physical water is darkened twice as hard in
+ *      one shot as in the other. Round 17 knew and said the axis was closed.
+ *      Range in eye heights is the quantity it is standing in for.
+ *
  * DEBUG HOOKS (never set in play):
  *   ?nowater             hide the interface, to separate it from the medium
  *   ?ownsky              force our analytic sky even when render/sky.js is live
@@ -815,6 +1015,9 @@
  *   ?ws:uRimAA:0&ws:uRimRough:0&ws:uRimCone:0   round 32's un-antialiased
  *     Snell rim, i.e. the two-value stencil, back exactly (bar the max() kink)
  *   ?ws:uRimAA:0         the screen-space term alone off, the other two kept
+ *   ?ws:uPhaseAmp:0      round 34's rigid relative phase back (CPU mirror follows)
+ *   ?ws:uRimGeo:0        the Snell rim counting the medium's blur twice again
+ *   ?ws:uFloorLift:0     the upwelling with no backscatter floor under it
  *   NOTE: ?noaniso does not currently complete a capture at these framings —
  *     two attempts gave zero shots (a 180 s timeout and a crash). Ablate the
  *     azimuthal axis with ?ws:uWaveSpreadC:1 instead.
@@ -1004,19 +1207,50 @@ const NW = WAVES.length;
  */
 const TOTAL_STEEP = 0.98;      // < 1 keeps the Jacobian off zero
 
+/**
+ * ROUND 35 — HOW MANY WAVELENGTHS OF ITS OWN THE PER-COMPONENT PHASE FIELD
+ * WANDERS OVER. See the round-35 block at the top of the file for the
+ * measurement; the short version is that a phase field of period PHASE_N * L
+ * carries a phase gradient of uPhaseAmp / PHASE_N relative to that component's
+ * own k, so this constant and uPhaseAmp together set how far the drawn local
+ * wave vector may stray from the tabulated one. 6 and 0.9 put that at 0.15.
+ */
+const PHASE_N = 6.0;
+/** Golden angle: the per-component rotation and phase-field headings use it so
+ *  no two components share a decorrelation direction. */
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+/**
+ * The CPU mirror of uPhaseAmp / uPhaseSpd. `let`, because ?ws:uPhaseAmp:0 has
+ * to move BOTH — a shader that draws a phase the height query does not know
+ * about is a boat floating half a metre off the water.
+ */
+let PHASE_AMP = 0.9;
+const PHASE_SPD = 0.031;
+
 // ============================================================== wave table
 const waveW0 = [];   // vec4(dirx, dirz, amp, k)
 const waveW1 = [];   // vec4(omega, Q, phase, wavelength)
+const waveW2 = [];   // vec4(warpRotCos, warpRotSin, phaseFieldKx, phaseFieldKz)
 (function buildWaves() {
   const rng = makeRNG(90210);
   let sw = 0;
   for (const w of WAVES) sw += w.s;
+  let i = 0;
   for (const w of WAVES) {
     const th = (WIND_DEG + w.d) * Math.PI / 180;
     const k = 2 * Math.PI / w.L;
     const Q = TOTAL_STEEP * w.s / (sw * w.a * k);
     waveW0.push(new THREE.Vector4(Math.cos(th), Math.sin(th), w.a, k));
     waveW1.push(new THREE.Vector4(Math.sqrt(GRAV * k), Q, rng() * Math.PI * 2, w.L));
+    // The shared refraction warp, rotated by this component's own angle, and
+    // this component's own phase-field wave vector. Both exist for one reason:
+    // to stop the thirteen components from holding a FIXED relative phase.
+    const rot = i * GOLDEN_ANGLE;
+    const pa = i * GOLDEN_ANGLE * 2.0 + 1.1;
+    const pq = 2 * Math.PI / (PHASE_N * w.L);
+    waveW2.push(new THREE.Vector4(Math.cos(rot), Math.sin(rot),
+                                  Math.cos(pa) * pq, Math.sin(pa) * pq));
+    i++;
   }
 })();
 /** Sum of amplitudes — the absolute ceiling a crest can reach. */
@@ -1073,16 +1307,32 @@ const WARPW = WAVES.map((w) => {
   return 0.18 + 0.82 * u * u * (3 - 2 * u);
 });
 
+/**
+ * The CPU half of phaseWave() in WARP_GLSL — value only; the shader needs the
+ * derivative as well because it draws the normal analytically, and this side
+ * gets its normal from finite differences of the height.
+ */
+function phaseWave(u) {
+  const w = u * 0.1591549431;
+  const a = Math.abs((w - Math.floor(w)) * 2 - 1);
+  return 1 - 2 * (a * a * (3 - 2 * a));
+}
+
 /** Gerstner displacement at an undisplaced surface parameter (x,z). */
 function gerstner(x, z, t, out) {
   let dx = 0, dy = 0, dz = 0;
   const wx = waveWarpX(x, z, t), wz = waveWarpZ(x, z, t);
   const grp = waveGroup(x, z, t);
   for (let i = 0; i < waveW0.length; i++) {
-    const w0 = waveW0[i], w1 = waveW1[i];
+    const w0 = waveW0[i], w1 = waveW1[i], w2 = waveW2[i];
     const A = w0.z * (1 + (grp - 1) * GROUPW[i]);
     const ww = WARPW[i];
-    const ph = w0.w * (w0.x * (x + wx * ww) + w0.y * (z + wz * ww)) - w1.x * t + w1.z;
+    // mirrors wavePhase() in WARP_GLSL — the CPU height query and the shader
+    // must not disagree, or buoyancy floats above or below the drawn surface
+    const rx = wx * w2.x - wz * w2.y, rz = wx * w2.y + wz * w2.x;
+    const u = w2.z * x + w2.w * z + t * PHASE_SPD;
+    const ph = w0.w * (w0.x * (x + rx * ww) + w0.y * (z + rz * ww))
+             - w1.x * t + w1.z + PHASE_AMP * phaseWave(u);
     const s = Math.sin(ph), c = Math.cos(ph);
     dx += w1.y * A * w0.x * c;
     dz += w1.y * A * w0.y * c;
@@ -1469,6 +1719,58 @@ float waveGroup(vec2 p) {
 // fraction of a wavelength instead of tearing the short chop apart. Mirrors
 // WARPW in the JS above.
 float waveWarpW(float L) { return 0.18 + 0.82 * smoothstep(6.0, 50.0, L); }
+
+uniform float uPhaseAmp;   // radians of per-component phase wander
+uniform float uPhaseSpd;   // how fast that field drifts
+
+/**
+ * A C1 periodic wave and its EXACT derivative, without a transcendental.
+ * .x runs +1 -> -1 -> +1 over one period of u (u in radians, like sin);
+ * .y is d(.x)/du, whose peak magnitude is 0.955 against a sine's 1.0, so the
+ * phase-gradient budget derived for a sine carries over unchanged.
+ *
+ * Why not sin/cos: this is evaluated once per component per pixel AND per
+ * vertex, on a 328k-triangle disc that fills the frame. Measured on
+ * surface-above at 1920x1080, a sin+cos pair here cost 118.7 -> 75.9 fps.
+ * A smoothstepped triangle is spectrally close to a sinusoid (fundamental plus
+ * a 3rd harmonic 27 dB down), and this field's only job is to decorrelate, so
+ * the harmonic content is free.
+ */
+vec2 phaseWave(float u) {
+  float w  = fract(u * 0.1591549431);       // u / (2 pi)
+  float t  = w * 2.0 - 1.0;
+  float a  = abs(t);
+  float sm = a * a * (3.0 - 2.0 * a);
+  // d(val)/du = -2 * (6a - 6a^2) * da/dw * dw/du,  da/dw = 2 sign(t)
+  return vec2(1.0 - 2.0 * sm,
+              -12.0 * a * (1.0 - a) * sign(t) * 2.0 * 0.1591549431);
+}
+
+/**
+ * ROUND 35 — ONE PLACE WHERE A COMPONENT'S PHASE IS DECIDED, called by BOTH
+ * stages so the displaced geometry and the analytic normal cannot disagree.
+ *
+ * w2.xy rotates the shared refraction warp by this component's own angle, and
+ * w2.zw is this component's own phase-field wave vector. See the round-35 block
+ * at the top of the file for why one shared warp was not enough: it displaces
+ * every component by the SAME vector, so the relative phase between two
+ * components is a rigid function of position and the interference pattern
+ * repeats. Rotating the warp per component and adding an independent phase
+ * field makes the relative phases wander by radians across a frame.
+ *
+ * kOff is the phase field's contribution to the LOCAL wave vector, i.e. the
+ * exact gradient of the term just added. The caller adds it to k*d, so the
+ * drawn normal is the true gradient of the drawn height field rather than an
+ * approximation of it.
+ */
+float wavePhase(vec4 w0, vec4 w1, vec4 w2, vec2 p, vec2 warp, out vec2 kOff) {
+  vec2 rw = vec2(warp.x * w2.x - warp.y * w2.y,
+                 warp.x * w2.y + warp.y * w2.x);
+  vec2 sp = p + rw * waveWarpW(w1.w);
+  vec2 pw = phaseWave(dot(w2.zw, p) + uTime * uPhaseSpd);
+  kOff = w2.zw * (uPhaseAmp * pw.y);
+  return w0.w * dot(w0.xy, sp) - w1.x * uTime + w1.z + uPhaseAmp * pw.x;
+}
 `;
 
 const FRESNEL_GLSL = /* glsl */ `
@@ -1495,6 +1797,7 @@ attribute float aSpacing;
 
 uniform vec4 uW0[${NW}];
 uniform vec4 uW1[${NW}];
+uniform vec4 uW2[${NW}];
 uniform vec3 uOrigin;
 
 varying vec2  vSurfP;
@@ -1503,8 +1806,9 @@ void main() {
   vec3 wp = vec3(position.x + uOrigin.x, uOrigin.y, position.z + uOrigin.z);
   vSurfP = wp.xz;
 
-  // one warp / one group field for the whole spectrum, so the components stay
-  // coherent with each other while none of them stays a plane wave
+  // one refraction warp and one group field for the whole spectrum; wavePhase()
+  // then rotates that warp per component and adds an independent phase field,
+  // so the components share a sea state without sharing a relative phase
   vec2  warp = waveWarp(wp.xz);
   float grp  = waveGroup(wp.xz);
 
@@ -1512,7 +1816,6 @@ void main() {
   for (int i = 0; i < ${NW}; i++) {
     vec2  d = uW0[i].xy;
     float A = uW0[i].z;
-    float k = uW0[i].w;
     float L = uW1[i].w;
     // displace a wave only while the mesh samples it at least ~6x per period;
     // past that the geometry would alias, so we hand it to the pixel shader.
@@ -1524,9 +1827,9 @@ void main() {
     // so the branch never diverges inside a wavefront) and it pays for the
     // three new ones several times over out past 60 m.
     if (fade > 0.002) {
-      vec2  sp = wp.xz + warp * waveWarpW(L);
       A *= fade * mix(grp, 1.0, smoothstep(6.0, 30.0, L));
-      float ph = k * dot(d, sp) - uW1[i].x * uTime + uW1[i].z;
+      vec2 kOff;
+      float ph = wavePhase(uW0[i], uW1[i], uW2[i], wp.xz, warp, kOff);
       float s = sin(ph), c = cos(ph);
       float QA = uW1[i].y * A;
       disp.x += QA * d.x * c;
@@ -1552,6 +1855,7 @@ ${FRESNEL_GLSL}
 
 uniform vec4  uW0[${NW}];
 uniform vec4  uW1[${NW}];
+uniform vec4  uW2[${NW}];
 uniform sampler2D uBed;
 uniform float uPixelScale;      // metres of world per pixel, per metre of range
 uniform float uAniso;           // 0..1 strength of the grazing footprint stretch
@@ -1601,6 +1905,8 @@ uniform float uWindowGain;      // sky radiance seen through Snell's window
 uniform float uRimAA;           // minimum Snell-rim width, in PIXELS (0 = the old step)
 uniform float uRimRough;        // how far sub-pixel facet slope widens that rim
 uniform float uRimCone;         // Jacobian-driven widening of the sky tap at the rim
+uniform float uRimGeo;          // 1 = the facet term sees only the PIXEL footprint
+uniform float uFloorLift;       // scale on the additive top-metre backscatter floor
 uniform float uMirrorGain;      // total-internal-reflection mirror level
 uniform float uRaftOpacity;     // translucency of residual foam rafts
 uniform float uFoamWater;       // share of foam radiance that is the water beneath
@@ -2518,10 +2824,14 @@ void main() {
     // the residual now costs: 13 components at the eye is unchanged, but the
     // mid field runs 2-3 fewer.
     if (f > 0.02) {
-      float ph = k * dot(d, vSurfP + sWarp * waveWarpW(L)) - uW1[i].x * uTime + uW1[i].z;
+      // ROUND 35: one shared entry point, so the vertex stage's displaced
+      // geometry and this stage's analytic normal cannot drift apart. kOff is
+      // the phase field's exact contribution to the local wave vector.
+      vec2 kOff;
+      float ph = wavePhase(uW0[i], uW1[i], uW2[i], vSurfP, sWarp, kOff);
       float s = sin(ph), c = cos(ph);
       float Af = A * f;
-      slope  += d * (k * Af * c);
+      slope  += (d * k + kOff) * (Af * c);
       height += Af * s;
       qsum   += Q * Af * k * s;
       float QAk = Q * Af * k * s;
@@ -2831,6 +3141,25 @@ void main() {
           * mix(1.0, uDipNear, dsteep)
           * mix(1.0, uDipDarken, dip * dip)
           * (1.0 - uCrestLift + uCrestLift * 2.0 * crest) + uSurfaceScatter;
+    /**
+     * ROUND 35 — the top metre's backscatter as a floor IN QUADRATURE, not as
+     * an addition.
+     *
+     * An added constant lifts the dark tail and compresses everything above it
+     * by the same amount: swept as a plain addition on the 20-50% band of
+     * surface-above (water only, the scanner cropped out), 4x took the pixels
+     * under L60 from 27.2% to 0.50% as wanted, and took the COARSEST octave
+     * from 8.98 to 6.67 against surface-above-1's 8.38 — i.e. it bought the
+     * black tail by spending the wave bodies, which is the other half of what
+     * this band is short of.
+     *
+     * sqrt(base^2 + floor^2) is the same floor with none of that: it is base to
+     * within 1% wherever base is more than 7x the floor (all the lit water) and
+     * it is the floor where base collapses, with no kink between. uFloorLift 0
+     * is an exact revert to the round-34 expression.
+     */
+    vec3 uwFloor = uSurfaceScatter * uFloorLift;
+    under = sqrt(under * under + uwFloor * uwFloor);
   }
 
   // The reflected ray on the back face of a chop cell dips BELOW the horizon,
@@ -2917,7 +3246,44 @@ void main() {
   float spread = 0.45 * (1.0 - exp(-scatter * 1.4));
   // sin(theta_i): how far a facet tilt of one radian moves the incidence cosine
   float sinI  = sqrt(max(1.0 - cosi * cosi, 0.0));
-  float rimF  = rough * sinI * uRimRough;
+  /**
+   * ROUND 35 — THE FACET TERM WAS COUNTING THE MEDIUM'S BLUR A SECOND TIME,
+   * AND THAT IS THE REGRESSION THE ROUND-34 CRITIC MEASURED AT THE 12 M
+   * CEILING.
+   *
+   * rough is not a property of the interface alone. It is built from
+   * lostW / lostD, which are driven by foot, and foot is
+   *
+   *     foot = dist * uPixelScale + scatter
+   *
+   * with scatter the MULTIPLE-SCATTERING blur of the water between the eye and
+   * the surface (it carries the (1 - above) factor, so it exists only on this
+   * side). Looking up through 12 m of water that second term dominates the
+   * first by an order of magnitude, every wave in the table reads as LOD-lost,
+   * and rough saturates against its own 0.78 ceiling. rimF then asks for a rim
+   * a third of the way from the critical angle to the nadir — while spread,
+   * three lines above, is ALREADY that same scattering blur expressed as an
+   * incidence width. The medium was in the quadrature sum twice.
+   *
+   * Measured, godrays framing dollied to 12 m, 1920x1080, crop 0.10,0,0.75,0.55,
+   * shipped 0.45 against ?ws:uRimRough:0:
+   *
+   *              p0.1   range   tileC   octaves fine->coarse
+   *   0.45       63.1   165.2    4.15   1.47 1.85 2.30 2.12 2.86
+   *   0          21.3   211.9    5.29   1.55 1.96 2.54 2.93 5.51
+   *
+   * i.e. the coarsest octave is halved and the black floor triples, which is
+   * the ceiling losing its dark TIR half to a rim that has swallowed it. At
+   * 18 m and beyond the two are identical to three figures (spread has taken
+   * over by then), and at 6 m the term is doing the job round 33 built it for.
+   *
+   * The split is the geometric share of the footprint: the facet slope a pixel
+   * genuinely cannot resolve is set by the pixel's own footprint on the water,
+   * and everything the medium adds is already in spread. uRimGeo 1 applies it,
+   * 0 is exactly round 33.
+   */
+  float geoShare = mix(1.0, (dist * uPixelScale) / max(foot, 1.0e-4), uRimGeo);
+  float rimF  = rough * sinI * uRimRough * clamp(geoShare, 0.0, 1.0);
   // fwidth is the honest per-pixel derivative; uRimAA is the minimum rim width
   // in pixels, so the edge can never be thinner than the sampling grid.
   float rimP  = fwidth(cosi) * uRimAA;
@@ -4060,6 +4426,35 @@ export default {
         ...medium, ...shared,
         uW0: { value: waveW0 },
         uW1: { value: waveW1 },
+        uW2: { value: waveW2 },
+        /**
+         * ROUND 35 — the per-component phase wander, in radians, and the speed
+         * the field carrying it drifts at.
+         *
+         * Measured on the DISPLACED height field (warp and groups included, not
+         * on the table) as the largest off-origin peak of the slope
+         * autocorrelation at lags over 10 m, two independent time samples:
+         *
+         *   uPhaseAmp   peak t=11.3s   peak t=47.9s   max |grad phi| / k
+         *     0            0.6096         0.5951           0
+         *     0.7          0.4411         0.4285         0.117
+         *     0.9          0.3663         0.3838         0.150
+         *     1.1          0.3681         0.3344         0.183
+         *
+         * A sea with no visible repeat cannot have 60% of its slope variance
+         * re-aligning at a 16 m lag, which is what the shipped build did. 0.9
+         * is where the curve flattens; past it the local wave vector strays far
+         * enough from the tabulated one to start showing as stretched crests.
+         *
+         * The gradient of this term is carried exactly (kOff in wavePhase), so
+         * unlike the shared warp it is not an approximation with a 6% error
+         * budget — the drawn normal is the true gradient of the drawn height.
+         *
+         * ?ws:uPhaseAmp:0 is an exact revert AND moves the CPU height query
+         * with it, so buoyancy still matches the drawn surface under ablation.
+         */
+        uPhaseAmp: { value: PHASE_AMP },
+        uPhaseSpd: { value: PHASE_SPD },
         uBed: { value: bedTex },
         uOrigin: { value: new THREE.Vector3(0, SEA, 0) },
         uPixelScale: { value: 0.0019 },
@@ -4371,6 +4766,12 @@ export default {
          * bent the whole aperture toward the zenith at mid range and cost the
          * 13-20 m ceiling its ripple banding, which is how this form was chosen.
          */
+        /**
+         * ROUND 35 — 1 splits the medium's blur out of the facet term, 0 is
+         * exactly round 33's rim. See the block at the rimF construction for
+         * the double-count this removes and the 12 m measurement that found it.
+         */
+        uRimGeo: { value: 1.0 },
         uRimAA: { value: 1.7 },
         uRimRough: { value: 0.45 },
         uRimCone: { value: 1.6 },
@@ -4382,6 +4783,48 @@ export default {
         // the troughs and round 2's value was 30% of the whole body term, which
         // is a large part of why nothing in the near field could go dark
         uSurfaceScatter: { value: new THREE.Color(0.0016, 0.0125, 0.0140) },
+        /**
+         * ROUND 35 — a sweepable scale on that floor, and why the floor is the
+         * right lever for the dark population rather than any of the three
+         * multiplicative darkeners above it.
+         *
+         * Measured on surface-above against surface-above-1.jpg (the only
+         * above-water plate that shares this shot's framing), band 20-50% of
+         * the frame height below the horizon:
+         *
+         *                    pixels under L60   under L45   under L30
+         *   surface-above-1        0.000%         0.000%      0.000%
+         *   ours, round 34        19.14%          2.88%       1.12%
+         *
+         * and the plate reads the same 0.000% in every band from the horizon
+         * down to 64% of the way to the bottom of frame. LOOK.md rule 5 says
+         * why: a fogged frame has no true blacks, and the lift comes from
+         * atmosphere rather than from a curve. On a wave face turned toward the
+         * eye there is almost no Fresnel and almost no haze, so the ONLY thing
+         * holding that pixel off the floor is the top metre's own backscatter,
+         * which is this term — and uDipNear (0.45) times uDipDarken (0.29 at
+         * the nadir) times the crest term (0.68 in a trough) compound to 0.12x
+         * on exactly those pixels.
+         *
+         * Swept in quadrature (see the expression), 20-50% band of
+         * surface-above, water only, against surface-above-1's matching band:
+         *
+         *   uFloorLift   mean   under L60   octaves fine->coarse
+         *      0         71.0     30.35%    10.42 10.73 10.40  9.54  8.13
+         *      6         86.2      0.48%     7.47  7.73  7.58  7.06  5.97
+         *     14        120.2      0.00%     3.66  3.73  3.81  3.68  3.61
+         *   plate       101.6      0.00%     4.63  5.83  6.42  7.48  8.38
+         *
+         * 6 is where the black tail is gone and the level has closed half its
+         * gap; 14 overshoots the level and flattens the band to a sheet. The
+         * cost, stated plainly because the next round should spend against it:
+         * the COARSEST octave goes 8.13 -> 5.97 against the plate's 8.38, so
+         * this buys the black tail partly out of the wave bodies. It is the
+         * right trade at 30% versus 0.000% and it is not free.
+         *
+         * ?ws:uFloorLift:0 is the exact revert.
+         */
+        uFloorLift: { value: 6.0 },
         uColumnExt: { value: new THREE.Vector3(0.0, 0.020, 0.030) },
         uBedFade: { value: 0.050 },
         uBedGain: { value: 0.34 },
@@ -4661,6 +5104,10 @@ export default {
         ctx.declareGodMode?.('watersurface', `?ws: — ${this.swept}`);
       }
     }
+    // Both override paths can move uPhaseAmp, and the CPU height query has to
+    // follow it or waterHeightAt() stops describing the surface the shader
+    // draws — which is what movement, vehicles and audio read for buoyancy.
+    PHASE_AMP = waterMat.uniforms.uPhaseAmp.value;
 
     bypass('nofoam',  'uFoamAmount', '?nofoam — all foam suppressed');
     bypass('nospec',  'uSpecGain',   '?nospec — sun specular suppressed');

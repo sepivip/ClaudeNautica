@@ -139,16 +139,27 @@ function simulate(dt) {
    * and vehicle modules can add their own through setCausticOccluders(); core
    * seeds the list with the player so the term is never dead.
    */
-  const _mv = ctx.get('movement');
-  const _pp = _mv?.position;
+  /**
+   * ?nocaustocc=1 must empty the WHOLE list, not just the player.
+   *
+   * The flag originally gated only the player push and left the
+   * module-contributed occluders below untouched, so the ablation it exists for
+   * could not actually turn the mechanism off — a terrain critic found this
+   * while trying to prove its own caustic work. That is the sixth ablation flag
+   * in this project to be silently inert, and the class of bug that has cost
+   * more rounds here than any other.
+   */
   _occl.length = 0;
-  if (_pp && !NO_CAUSTIC_OCCL) _occl.push({ pos: _pp, radius: 1.1 });
-  for (const m of modules.values()) {
-    if (!m.causticOccluders) continue;
-    try {
-      const extra = m.causticOccluders(ctx);
-      if (extra) for (const o of extra) { if (_occl.length < 8) _occl.push(o); }
-    } catch { m.causticOccluders = null; }
+  if (!NO_CAUSTIC_OCCL) {
+    const _pp = ctx.get('movement')?.position;
+    if (_pp) _occl.push({ pos: _pp, radius: 1.1 });
+    for (const m of modules.values()) {
+      if (!m.causticOccluders) continue;
+      try {
+        const extra = m.causticOccluders(ctx);
+        if (extra) for (const o of extra) { if (_occl.length < 8) _occl.push(o); }
+      } catch { m.causticOccluders = null; }
+    }
   }
   setCausticOccluders(_occl);
   updateFallbacks();
@@ -349,7 +360,18 @@ function updateFallbacks() {
   // Modules stream geometry in later (terrain chunks, flora, creatures), so keep
   // applying it as the scene grows rather than only once at boot.
   CN.enableShadows = enableShadows;
-  setInterval(() => enableShadows(engine.scene), 1000);
+  // Ablations for the compile-stall investigation (see tools/perfprobe.mjs):
+  //   ?noshadowloop=1  stop re-flagging every mesh as a shadow caster each second
+  //   ?noshadows=1     disable the shadow map entirely
+  const _p = new URLSearchParams(location.search);
+  if (_p.get('noshadows') === '1') {
+    engine.renderer.shadowMap.enabled = false;
+    ctx.declareGodMode('core', 'shadow map disabled (?noshadows=1)');
+  }
+  if (_p.get('noshadowloop') !== '1') {
+    setInterval(() => enableShadows(engine.scene), 1000);
+  } else ctx.declareGodMode('core', 'recurring enableShadows disabled (?noshadowloop=1)');
+
   // warm shader compilation so the first captured frame is not a black/stall frame
   try { await engine.renderer.compileAsync(engine.scene, engine.camera); } catch { /* older three */ }
   simulate(1 / 60);

@@ -109,19 +109,41 @@ node tools/measure.mjs a.png b.png
 
 ## Honest status
 
-This is **not** finished, and it does not beat Subnautica. The last blind A/B was **14/14** — a critic identified the real game in every fair pair, twelve of them in about a second without magnification. Composite score sits at **42/100**.
+This is **not** finished, and it does not beat Subnautica. The last blind A/B was **14/14** — a critic
+identified the real game in every fair pair, twelve of them in about a second without magnification.
 
-Known-bad, already measured and queued:
+**The biggest problem is not visual.** Played rather than screenshotted, the game holds ~105 fps and
+then freezes for **6 to 9 seconds at a time** while three.js compiles material variants on first draw.
+The world has ~94 distinct shader programs and they compile lazily, synchronously, as content streams
+in — so exploring somewhere new stalls, and swimming back through it does not.
 
-- The **flashlight lights the tool and almost nothing else** — it raises a cave floor by 0.31% while raising its own housing by 134%.
-- The **wreck doesn't read as a hull**; creature **eyes are one flat tone**; the **creepvine is black origami**.
-- The **sea surface** carries a regular diagonal pattern in the far band, and holds only one hue where a real sea carries several.
+That defect survived 35 rounds of review because of how it was measured: the capture harness *freezes*
+the render loop and steps it manually, so it reports render cost on an already-warm shader set and
+never runs the per-frame update path at all. It cheerfully reported 60–130 fps for a build that
+freezes for nine seconds. `tools/perfprobe.mjs` now drives the real `requestAnimationFrame` loop and
+swims like a player; it is the tool that found this, and four separate fixes for it have been tried
+and reverted. The cause is understood; the fix is architectural and still open.
 
-What does hold up: the water medium and colour response (the most-worked area — in linear light its hue-vs-level slope is within 5% of the reference's), survival, and terrain-hugging movement.
+Other known-bad, measured, and queued:
 
-**No human had played it** until well after these screenshots were taken. Every score in this repo came from still frames and automated routes — which means nothing here validates whether it is *fun*. That is the honest limit of a loop like this one.
+- The **wreck doesn't read as a hull**; creature **eyes are one flat tone**; the **creepvine is black
+  origami**.
+- The **sea surface** carries no near-to-far chroma ramp — both reference plates move 28–44% in
+  linear G/B across the frame and ours moves under 3% — and its foam is hard-edged opaque islands
+  where the plate has soft broken crest texture.
+- The **seabed has a 45° comb** in it: directional anisotropy of 1.537 on the diagonal against 1.168
+  in x/y, where the reference plate reads 1.05–1.25.
+- The **torch now genuinely lights the world** (a fix that landed after the screenshots above), but its
+  pool term scales the medium's own colour, so turning it on *reduces* hue variety — a fix that broke
+  something more important than it repaired.
 
----
+What does hold up: the water medium and colour response (in linear light its hue-vs-level slope is
+within 5% of the reference's), survival, and terrain-hugging movement.
+
+**No human had played it** until well after these screenshots were taken — and the first person who
+did found the stall above in under a minute, which no automated critic had caught in 35 rounds. Every
+score in this repo came from still frames and automated routes. That is the honest limit of a loop
+like this one.
 
 ## Reference material
 

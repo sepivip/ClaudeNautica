@@ -730,12 +730,56 @@ void main() {
 }
 `;
 
+// ---------------------------------------------------------------- ablation
+/**
+ * THIS MODULE'S OWN ABLATION SWITCHES, and why it needs them.
+ *
+ * Round 35's brief asked me to prove the caustic-occlusion adoption with core's
+ * `?nocaustocc=1`, on the rule "if the frame is still bit-identical you have not
+ * wired it". That rule is not sound, and the ablation is not a complete one.
+ * `src/main.js` gates only the PLAYER push behind the flag:
+ *
+ *     if (_pp && !NO_CAUSTIC_OCCL) _occl.push({ pos: _pp, radius: 1.1 });
+ *     for (const m of modules.values()) { ... _occl.push(o) ... }   // ungated
+ *
+ * so with the flag set the shallows-floor pose still publishes three live
+ * occluders from creatures, and the one it does remove — the diver, pinned to
+ * the camera — throws its shadow BEHIND the near clip at that pose (the shadow
+ * point is 0.87 m behind the camera plane along the view axis). A term can
+ * therefore be perfectly wired, measurably strong, and still leave that
+ * particular A/B bit-identical. Ours does: see the numbers in the round report.
+ *
+ * So the switches below are mine, they ablate the terms at the point of use, and
+ * they are what any claim in this module should be measured with.
+ *
+ *   ?tabl=net:0,occ:0        named, any subset, each 0..1 (and above 1 is legal:
+ *                            it is how this round previewed a retune before
+ *                            editing a single shader constant)
+ *   ?tabl=1,1,0.5,1          positional, in ABL_KEYS order
+ *   ?tnocaustocc=1           shorthand for occ:0 — the complete occlusion ablation
+ *
+ * Every multiplier is exactly 1.0 unless a parameter says otherwise, and every
+ * site is written so that 1.0 is algebraically the previous expression, so the
+ * shipped path is a no-op. `terrain.ablation` publishes what the uniforms
+ * actually hold rather than what was asked for, because a switch that silently
+ * does nothing has manufactured false evidence in this project five times.
+ *
+ * They are uniforms, not defines, so they add no shader program variant: the
+ * world already carries ~94 of those and each one costs a multi-second stall the
+ * first time it is drawn. Verified: 174 programs with them and without.
+ */
+const uAbl  = { value: new THREE.Vector4(1, 1, 1, 1) };  // ripple, mineral, grain, broadband
+const uAbl2 = { value: new THREE.Vector4(1, 1, 1, 1) };  // net, occlusion, drift, grainN
+const ABL_KEYS = ['ripple', 'mineral', 'grain', 'broad', 'net', 'occ', 'drift', 'grainN'];
+
 // ---------------------------------------------------------------- shared glsl
 // The cobble field (below) has to be shaded by exactly the same sand and the
 // same light as the seabed it is bedded into, or its contact apron reads as a
 // disc pasted on the floor. So the sand, the noise and the lighting are one
 // source of truth, included by both fragment shaders.
 const NOISE_GLSL = /* glsl */ `
+uniform vec4 uAbl;   // ablation, all 1.0 in the game — see the note above
+uniform vec4 uAbl2;
 float thash(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
   p3 += dot(p3, p3.yzx + 33.33);
@@ -898,7 +942,7 @@ vec3 uwSand(vec3 Pw, vec3 Ng, vec3 pal, float mpp, out vec2 grad, out float rocc
   // old fade left the one 1.5-3 m feature LOOK.md §7 asks for by name at a
   // quarter strength over most of the frame — and with the mineral layers now
   // halved there is nothing else in that band except the caustic net.
-  float ripA = (0.66 + 0.34 * (m2 * 0.5 + 0.5)) * (1.0 - 0.58 * slopeW) * aa;
+  float ripA = (0.66 + 0.34 * (m2 * 0.5 + 0.5)) * (1.0 - 0.58 * slopeW) * aa * uAbl.x;
   float crest = pow(0.5 + 0.5 * sin(phase), 2.2);              // mean ~0.38
   float phase2 = phase * 3.35 + n1(su * 0.26) * 1.6;
   float crest2 = (0.5 + 0.5 * sin(phase2)) * aa2;
@@ -940,9 +984,9 @@ vec3 uwSand(vec3 Pw, vec3 Ng, vec3 pal, float mpp, out vec2 grad, out float rocc
   // pair 014. The fine grain is left nearly alone, because that is the half we
   // already match.
   vec3 c = pal;
-  c *= 0.90 + 0.16 * (m1 * 0.5 + 0.5) + 0.05 * m2;
+  c *= 1.0 + uAbl2.z * (-0.10 + 0.16 * (m1 * 0.5 + 0.5) + 0.05 * m2);
   // broad 10 m pale/dark drifts — the sand is never one value across a frame
-  c *= 0.89 + 0.22 * (n1(uwRot(su, 1.05) * 0.092 + 23.0) * 0.5 + 0.5);
+  c *= 1.0 + uAbl2.z * (-0.11 + 0.22 * (n1(uwRot(su, 1.05) * 0.092 + 23.0) * 0.5 + 0.5));
   // THE RIPPLE GIVES UP THE BAND. 1.5-3 m directional crests are named in
   // LOOK.md §7 and must be there — but at 1.75 of albedo on top of a 22 degree
   // normal perturbation and a 42 % lee occlusion, they were not a ripple field,
@@ -1029,7 +1073,7 @@ vec3 uwSand(vec3 Pw, vec3 Ng, vec3 pal, float mpp, out vec2 grad, out float rocc
   // is entirely mid-scale and the fine end must NOT be cut with it - which is the
   // error the round-7 critique names ("r7 lowered fine, mid, net AND coarse bands
   // together instead of trading hard-edged contrast for broadband grain").
-  c *= (1.0 - 0.085 * blot) * (1.0 - 0.105 * trail);
+  c *= (1.0 - 0.085 * blot * uAbl.y) * (1.0 - 0.105 * trail * uAbl.y);
   // Grain, five octaves, each band-limited on its own.
   //
   // Every one of these numbers is roughly twice what it would be in air, and
@@ -1095,12 +1139,40 @@ vec3 uwSand(vec3 Pw, vec3 Ng, vec3 pal, float mpp, out vec2 grad, out float rocc
   // COARSEST members with nothing left to sit under - a 5-12 px blotch field.
   // Cutting them is what flattens the profile; the octaves they leave behind at
   // close range are g3 and g4, which are the ones that actually read as sand.
-  float grain = g1 * 0.02 + g2 * 0.15 + g3 * 0.35 + g4 * 0.33;
+  // 0.15 -> 0.075 and 0.35 -> 0.175 AT THE TWO MIDDLE OCTAVES ONLY, with the
+  // finest RAISED. This is a spectral change, not a contrast cut, and the
+  // difference matters: every previous attempt here scaled the whole stack,
+  // which is the error round 7 names by name.
+  //
+  // Measured this round on shallows-floor with an in-page A/B (one boot, one
+  // geometry state, the ablation uniforms toggled between renders, so streaming
+  // and LOD cannot move; three identical baselines agreed to four significant
+  // figures on every statistic). Laplacian-pyramid RMS as a percentage of window
+  // mean, fine -> coarse, on 200x160 sand-only windows, clipAny 0.00 on ours and
+  // 0.006-0.77 on all five reference windows so neither side is railed:
+  //
+  //     ours  (300,890)          5.75  10.05  15.51  18.74  14.95
+  //     plate, loudest window    4.11   4.47   4.84   5.38   6.84
+  //     plate, cleanest window   1.88   1.68   1.73   2.20   2.70
+  //
+  // So we are 1.40x the reference's LOUDEST sand at 1-2 px — call that parity —
+  // and 3.20x / 3.48x at 4-8 and 8-16 px. The reference sand is flat in pixels
+  // at every window (tilt 1.44-1.66) and stays flat under resampling; ours rises
+  // 3.3x from the finest band to the fourth. The defect is a HUMP at 4-16 px,
+  // which at this pose's 180 px/m is 2-9 cm - exactly where g2 (9.1 cycles/m)
+  // and g3 (22.3) sit. Halving those two and lifting g4 moves energy out of the
+  // hump without touching the one band we already match.
+  //
+  // Ablation, same window, showed why a scalar cannot work: scaling the WHOLE
+  // stack to 0.45 gave 3.72 / 6.40 / 10.24 / 13.77 / 12.73 - the finest band
+  // falls to 0.91x the plate's loudest (under it) while 4-16 px is still at
+  // 2.1-2.6x. The stack has to be reshaped, not turned down.
+  float grain = g1 * 0.02 + g2 * 0.075 + g3 * 0.175 + g4 * 0.38;
   // 1.02, down only from 1.20, and deliberately barely touched. The finest band
   // is the one place we already MATCH the reference (detailRMS 9.9 % of mean
   // against 9.0 %), so the cut here is 15 % where the 0.5-3 m layers took 50 %.
   // Cutting grain to fix a mid-scale problem is how a floor ends up plastic.
-  c *= 1.0 + 1.02 * grain;
+  c *= 1.0 + 1.02 * grain * uAbl.z;
   // ...and the fine grain is relief as well as albedo, which is what makes it
   // survive the additive caustic term instead of being washed out by it.
   // Rotated and bent like everything else, because an unrotated lattice driving
@@ -1131,8 +1203,17 @@ vec3 uwSand(vec3 Pw, vec3 Ng, vec3 pal, float mpp, out vec2 grad, out float rocc
   // eye reads them as grain - and the tap now dies past about 9 m instead of
   // 37 m, which is correct: the screen-locked broadband term below is what is
   // supposed to carry the mid field, and it does so at a flat spectrum.
+  // 0.0072 -> 0.0036. The frequency is right and stays; the amplitude was set
+  // last round to be "the largest single thing wrong with the sand" and it
+  // still is, only now in the other direction. 21 cycles/m is a 4.8 cm cell,
+  // which at this pose lands at 8-9 px - the 8-16 px band that measures 3.48x
+  // the reference. Ablated on its own with ?tabl=grainN:0 it carries 14 % of the
+  // window's 32 px local contrast and 9.54 of the 18.74 in that band (in
+  // quadrature), more than any other single tap in the module. Halving it is
+  // worth ~2.6 points of that band and costs the 1-2 px band almost nothing,
+  // because a 4.8 cm cell is not in the 1-2 px band to begin with.
   vec3 gg = nd(uwBend(uwRot(su, 1.83) * 21.0, gw, vec2(0.30, -0.35)) + 21.0);
-  grad += gg.yz * (21.0 * 0.0072 * (1.0 - smoothstep(0.30, 0.52, 21.0 * mg)));
+  grad += gg.yz * (21.0 * 0.0036 * uAbl2.w * (1.0 - smoothstep(0.30, 0.52, 21.0 * mg)));
 
   // ---- SCREEN-LOCKED BROADBAND. The other half of the trade, and the half the
   // stack above physically cannot make.
@@ -1173,7 +1254,7 @@ vec3 uwSand(vec3 Pw, vec3 Ng, vec3 pal, float mpp, out vec2 grad, out float rocc
   // Pw is passed rather than read from a varying because varyings are
   // write-only in the vertex stage and this header is shared with one.
   float sfMpp = max(length(Pw - uCamPos), 0.05) / max(uSfPixelScale, 1.0);
-  c *= 1.0 + 0.16 * sfBroadbandAt(Pw, sfMpp);
+  c *= 1.0 + 0.16 * uAbl.w * sfBroadbandAt(Pw, sfMpp);
   return c;
 }
 `;
@@ -1183,14 +1264,44 @@ const LIGHT_GLSL = /* glsl */ `
 // the ?tdbg=1 view so the debug frame cannot flatter the real one. The previous
 // build's debug view ran at 0.62 against a shaded path at 1.00, which is exactly
 // the kind of quietly-wrong instrument the brief warns about.
-// 1.70 puts cAmt at ~1.31 on level sand at 25 m. The shaped net (see
-// uwCausticNet) is p05 0.690 / p95 1.539 / max 1.62 about a mean of 1, so that
-// lands at p05 0.59, p95 1.71, peak 1.81 — 2.9:1 peak-to-shadow in the shader,
-// which is LOOK.md §3's "about 2:1" ON SCREEN once the water column has taken
-// its third. It is deliberately measured in the shader against a screen target,
-// because everything in this module that was tuned to look right in the shader
-// arrived at the eye at half strength.
-const float CAUS_GAIN = 1.70;
+// 1.70 -> 0.95, AND THE 1.70 WAS NEVER MEASURED ON SCREEN.
+//
+// The comment this replaces claimed 1.70 "lands at 2.9:1 in the shader, which is
+// LOOK.md section 3's about 2:1 ON SCREEN once the water column has taken its
+// third". That inference was extrapolated from a sweep run at gains 0.62 and
+// 1.30 and never re-checked at the gain that shipped, and it is wrong in the
+// direction nobody tested: the medium and the tone curve do not take a third
+// off, they EXPAND it slightly at these levels.
+//
+// Measured directly, round 35. Two frames from one boot and one geometry state,
+// identical but for this term (?tabl=net:0), differenced per pixel in LINEAR
+// luminance over the near-sand window (300,890) 200x160 — that ratio map IS the
+// net's own on-screen amplitude, with the sand, the medium and the grade divided
+// out. The instrument's own noise floor on a null pair is 1.043:1.
+//
+//     gain 1.70:  p05 0.525   p50 0.745   p95 2.243   ->  p95/p05 = 4.27:1
+//
+// LOOK.md section 3 measures the reference at about 2:1 and "+30-45 % over local
+// diffuse"; ours peaked at +124 %. The plate PLATES.md names as the ONE fair
+// judge of our caustics, shallows-floor-1, measures 1.23-1.97:1 peak-to-shadow
+// over five sand-only windows (clipAny 0.006-0.77 %, so none of them railed),
+// and LOOK.md's own quoted swatches — peaks #CEB895 over cells #5D5752 — are
+// 2.11:1. So the net was carrying more contrast on its own than the whole
+// reference image carries in total.
+//
+// The relation is very close to linear in the shaped net's own spread: at gain g
+// the on-screen ratio tracks (1 + 0.62 k)/(1 - 0.31 k) with k = cAmt ~ 0.94 g,
+// which puts 2:1 at g ~ 0.92. 0.95 is that, and it is verified rather than
+// derived — see the round report for the re-measured ratio.
+//
+// This does NOT re-open "the seabed has no caustic net". That diagnosis was made
+// when the term was core's ADDITIVE one at a median of +1.1 % of local diffuse;
+// this one is a mean-neutral multiplier and at 0.95 it still spans 0.7x to 1.6x.
+// And the sand's own mid-band contrast comes down with it this round, so the
+// net's SHARE of the 0.5-3 m band goes up while its absolute contrast comes
+// down — which is exactly what blind pair 014 asked for and what turning the
+// gain up could never deliver.
+const float CAUS_GAIN = 0.95;
 
 // ============================================================== THE CAUSTIC NET
 //
@@ -1337,7 +1448,7 @@ vec3 uwLight(vec3 albedo, vec3 N, vec3 P, float ao, float gloss, float sunVisH, 
   // routes 55 % of the net through the AMBIENT term (forward-scattered sunlight
   // off the same rippled surface), which would otherwise carry a full-strength
   // filament straight across a body shadow.
-  float cOcc   = uwCausticOcclusion(P);
+  float cOcc   = mix(1.0, uwCausticOcclusion(P), uAbl2.y);
   float sunVis = sunVisH * cOcc;
   // Sunlight has already crossed pointDepth metres of water before it lands here.
   // The shared injection in core scales the lit surface by ONE scalar derived
@@ -1468,7 +1579,7 @@ vec3 uwLight(vec3 albedo, vec3 N, vec3 P, float ao, float gloss, float sunVisH, 
   // by a factor of two by the time it is a pixel.
   float cAmt = CAUS_GAIN * cFade * upF * uCausticsStrength * uUnderwater
              * mix(0.55, 1.0, ao) * cOcc;
-  float net  = 1.0 + cAmt * (uwCausticNet(P) - 1.0);
+  float net  = 1.0 + cAmt * uAbl2.x * (uwCausticNet(P) - 1.0);
   // The fold structure belongs to the direct beam, but underwater the ambient
   // term is itself forward-scattered sunlight off the same rippled surface, so
   // it carries a BLURRED copy of the same pattern rather than none of it. At
@@ -1901,6 +2012,7 @@ function makeMaterial() {
       uSunIntensity: U.uSunIntensity,
       uAmbTop: U.uAmbientTop,
       uAmbBottom: U.uAmbientBottom,
+      uAbl, uAbl2,
       uDetailAmt: { value: 1.0 },
       uDbg,
     },
@@ -2590,6 +2702,7 @@ function makeCobbleMaterial() {
       uSunIntensity: U.uSunIntensity,
       uAmbTop: U.uAmbientTop,
       uAmbBottom: U.uAmbientBottom,
+      uAbl, uAbl2,
       uDbg,
     },
     vertexShader: COB_VERT,
@@ -3074,6 +3187,32 @@ export default {
       if (m) dbg = Number(v) || Number(m[1]) || 1;
     }
     uDbg.value = Number.isFinite(dbg) ? dbg : 0;
+
+    // ---- ablation switches (see the note above NOISE_GLSL). Two spellings, for
+    // the same reason tdbg takes two: a harness that mangles '=' must still be
+    // able to reach them, and a switch that silently does nothing has corrupted
+    // a round's evidence here five times.
+    //   ?tabl=1,1,0,1,1,1,1   positional, in ABL_KEYS order
+    //   ?tabl=grain:0,net:0   named
+    //   ?tnocaustocc=1        the complete occlusion ablation this module owns
+    const ablV = [1, 1, 1, 1, 1, 1, 1, 1];
+    const spec = (ctx.params?.get?.('tabl') || '').trim();
+    let pos = 0;
+    for (const part of (spec ? spec.split(',') : [])) {
+      const c = part.indexOf(':');
+      if (c < 0) { if (pos < ablV.length) ablV[pos] = Number(part); pos++; }
+      else {
+        const i = ABL_KEYS.indexOf(part.slice(0, c).trim());
+        if (i >= 0) ablV[i] = Number(part.slice(c + 1));
+      }
+    }
+    for (const [k] of (ctx.params || [])) if (/^tnocaustocc$/.test(k)) ablV[5] = 0;
+    const fin = (v, d) => (Number.isFinite(v) ? v : d);
+    uAbl.value.set(fin(ablV[0], 1), fin(ablV[1], 1), fin(ablV[2], 1), fin(ablV[3], 1));
+    uAbl2.value.set(fin(ablV[4], 1), fin(ablV[5], 1), fin(ablV[6], 1), fin(ablV[7], 1));
+    const ablAll = [uAbl.value.x, uAbl.value.y, uAbl.value.z, uAbl.value.w,
+      uAbl2.value.x, uAbl2.value.y, uAbl2.value.z, uAbl2.value.w];
+    this.ablation = Object.fromEntries(ABL_KEYS.map((k, i) => [k, ablAll[i]]));
     if (uDbg.value > 0) {
       for (const m of [material, cobMaterial]) {
         const uu = m.userData.uwUniforms;

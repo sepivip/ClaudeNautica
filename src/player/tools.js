@@ -742,6 +742,7 @@ uniform vec3  uLampPos;
 uniform vec3  uLampDir;
 uniform vec3  uLampCol;
 uniform float uIrrNorm;      // normalises irr to 1.0 on axis at LAMP_DREF
+uniform float uSoft;         // LAMP_SOFT, the finite-reflector term, in m^2
 uniform float uSpreadInv;    // 1 / (1 - cos(outer half angle))
 uniform float uRange;
 uniform float uHasDepth;
@@ -853,23 +854,33 @@ float lampI(float c) {
 }
 
 /*
- * Windowed inverse square, then a soft knee on the result.
+ * Windowed inverse square. uSoft is the reflector's finite size — a torch head
+ * is not a point, so 1/d^2 has to stop somewhere or the first metre runs away —
+ * and the window reaches exactly zero at uRange, so the reach term can never
+ * draw its own contour the way a bare smoothstep did.
  *
- * The window reaches exactly zero at uRange, so the reach term can never draw
- * its own contour the way a bare smoothstep did, and the 1.6 in the denominator
- * is the reflector's finite size — a torch head is not a point, so 1/d^2 has to
- * stop somewhere or the first metre runs away. Even with it, 0.4 m against the
- * 2.5 m normalising distance is still a factor of 4.4, and a play route caught
- * exactly that: a kelp blade drifting inside a metre of the lens came back at
- * 250/255 with a bloom halo, in a frame whose water reads 30. The knee holds the
- * shading intact out where the pool actually lives and asymptotes to 3.2 rather
- * than to infinity, so nothing the player swims into can blow.
+ * THE KNEE THAT USED TO BE ON THE END OF THIS IS GONE, and so are the two magic
+ * literals it carried. It read
+ *
+ *     float x = a * 7.85;  return (x / (1.0 + x * 0.16)) / 7.85;
+ *
+ * where 7.85 was a hand-copied duplicate of the JS IRR_NORM. Duplicating another
+ * declaration's value as a GLSL literal is the exact defect this round found in
+ * postfxNearGain() as well, so both are now uniforms fed from the one JS
+ * constant and cannot drift again.
+ *
+ * The knee itself was the THIRD compressor in a chain of three (this, the pool's
+ * uMulMax asymptote, and the additive knee), all of them placed to survive a
+ * near field that uNearCut already refuses to light: rawDist returns "no
+ * geometry" for anything closer than the view model's own bounding sphere, which
+ * measures 1.39 m in the cave shot. The stated failure case — "a kelp blade
+ * drifting inside a metre of the lens" — cannot reach this function at all. What
+ * the knee did reach was the working field, where it cost a further 2.4% on top
+ * of everything else. One safety per pass is enough.
  */
 float lampAtten(float d) {
   float k = clamp(1.0 - pow(d / uRange, 4.0), 0.0, 1.0);
-  float a = k * k / (d * d + 1.6);
-  float x = a * 7.85;                       // in units of the value at 2.5 m
-  return (x / (1.0 + x * 0.16)) / 7.85;
+  return k * k / (d * d + uSoft);
 }
 
 /*
@@ -931,8 +942,22 @@ vec3 normalAt(vec2 uv, vec3 p0, float far) {
  * on the night-shallows seabed (+0.09%) — under the 0.4% noise floor, i.e. a
  * torch that lights nothing. Boosting both terms EIGHT times
  * (`?lamppool=8&lampadd=8`) reproduced `shallows-floor` to every digit of every
- * statistic measure.mjs reports. That is not a level that needs tuning; it is a
- * pass that never ran.
+ * statistic measure.mjs reports.
+ *
+ * ROUND 35 — THE SENTENCE THAT USED TO END THAT PARAGRAPH WAS FALSE. It read
+ * "that is not a level that needs tuning; it is a pass that never ran", and on
+ * the strength of it this file spent a round believing the lamp was fixed. The
+ * pass genuinely was not running and this depth copy genuinely is what made it
+ * run. It was ALSO a level that needed tuning, by very nearly the same factor of
+ * eight, and the two faults were simply in series. Re-measured with the depth
+ * copy in place: cave floor +0.31%, night seabed +1.33% — better than +0.05% and
+ * still not a torch. The second fault was LAMP_DREF; see its comment.
+ *
+ * The lesson is the one the 8x should have given away at the time. A single
+ * multiplier that repairs a frame is evidence of ONE scalar being wrong
+ * somewhere in the chain, not evidence about which one, and `?lamppool=8` scales
+ * a gain that is multiplied by uIrrNorm two lines later. Both readings fit the
+ * measurement; only one of them was checked.
  *
  * The fix is to stop reading a reconstruction of the scene and read the scene.
  * core/engine.js renders into an HDR target that owns a real FloatType
@@ -1108,7 +1133,6 @@ ${LAMP_COMMON}
 uniform vec3  uAddKey;
 uniform float uVolKey;
 uniform float uDither;
-uniform vec3  uNearCancel;
 uniform float uKnee;
 
 float hgN(float c, float g) {
@@ -1240,21 +1264,41 @@ void main() {
   if (dot(outCol, vec3(1.0)) < 1e-7) discard;
 
   /*
-   * CANCEL POSTFX'S NEAR-ZONE CHANNEL GAIN — see postfxNearGain(), which derives
-   * this from the same uniform postfx derives its own from. postfx grades the
-   * near field toward the reciprocal of the fog chromaticity on the argument
-   * that near geometry has lost the least of what the medium eats. True of
-   * geometry lit by the SUN, false of a pool lit by a torch whose light has
-   * already made a two-way trip through the same water. Pass 1 needs no such
-   * correction because it is a RATIO and the operator cancels out of it.
+   * THE POSTFX NEAR-GAIN CANCEL THAT USED TO BE HERE IS GONE. It read
+   *
+   *     outCol = max(outCol, vec3(0.0)) * uNearCancel;
+   *
+   * with uNearCancel = 1 / postfxNearGain(), on the argument that postfx grades
+   * the near field toward the reciprocal of the fog chromaticity and a torch-lit
+   * pool has not earned that. Two things were wrong with it, both measured live.
+   *
+   * IT CANCELLED A GAIN THAT WAS NOT APPLIED. postfx's zone gain is not a near
+   * gain, it is a per-pixel blend uGainNear*wNear + uGainMid*wMid +
+   * uGainFar*wFar with the weights driven by that pixel's own fog amount. At 7 m
+   * in the 192 m cave — where the cone's geometry actually is — fogAmt is 0.601,
+   * which gives wNear 0.227 / wMid 0.529 / wFar 0.244 and an applied green gain
+   * of 1.081. This pass was dividing by 1.45 on every pixel at every distance.
+   *
+   * AND 1.45 WAS NOT EVEN THE RIGHT NUMBER. Read off postfx's own live uniform
+   * in four shots, uGainNear is (0.782, 1.300, 0.826) in the cave, (1.300,
+   * 0.961, 0.815) at night-shallows, (1.300, 0.948, 0.834) at the dropoff and
+   * (1.300, 1.012, 0.782) in the Grand Reef; the JS reproduction feeding this
+   * uniform returned (0.761, 1.450, 0.738) / (1.450, 0.944, 0.771) / (1.450,
+   * 0.927, 0.787) / (1.450, 0.995, 0.738). Every channel of every shot is wrong,
+   * and the pinned one by exactly 1.450/1.300 — a clamp postfx tightened and
+   * this file never heard about.
+   *
+   * Net: a quarter of the reveal floor's GREEN was being thrown away, in the one
+   * channel cave-1.jpg says a lamp exists to raise (its pool measures G/B 0.85
+   * to 1.00 against the same frame's water at 0.137). A torch's light is part of
+   * the photographed scene; it gets graded with the scene.
    */
-  outCol = max(outCol, vec3(0.0)) * uNearCancel;
+  outCol = max(outCol, vec3(0.0));
   /*
    * The knee is a safety and nothing more. It compresses LUMINANCE and rescales
    * the triple, so it cannot flatten the colour the water gave the beam, and its
-   * asymptote is set six times above the pass's own operating point — so unlike
-   * round seven's, which every pixel of the pool was pinned against, this one
-   * only ever acts on a creature that drifts a metre off the reflector.
+   * asymptote is now genuinely above the pass's own operating point — see the
+   * uKnee line in Lamp.update for the arithmetic that used not to be.
    */
   float lamL = max(dot(outCol, vec3(0.2126, 0.7152, 0.0722)), 1e-6);
   outCol *= (lamL / (1.0 + lamL * uKnee)) / lamL;
@@ -1358,41 +1402,107 @@ void main() {
 const NIGHT_Y = 0.108;      // luminance of sky.js's NIGHT_MUL
 const LAMP_FLOOR = 0.0030;  // the darkest water we will anchor to (void is 0.0045)
 const LAMP_REF = 0.120;     // a lit shallow frame, for the dark bonus ratio
-const LAMP_DREF = 2.5;      // metres: where the pool is normalised
-const LAMP_SOFT = 1.60;     // reflector size in the inverse-square denominator
-const IRR_NORM = LAMP_DREF * LAMP_DREF + LAMP_SOFT;   // = 7.85
+/*
+ * LAMP_DREF IS THE WHOLE OF THE MISSING 8x, AND IT WAS 2.5 m.
+ *
+ * uIrrNorm normalises `irr` to 1.0 on axis at LAMP_DREF, so LAMP_DREF is the
+ * distance at which MUL_GAIN, ADD_REL and MOTE_REL mean what they say. Every one
+ * of them was therefore being read at a distance nothing in any shot occupies.
+ *
+ * Measured, on the 192 m cave, binning every pixel inside the cone by its
+ * distance out of the lamp's own depth copy: of 190 617 in-cone samples, 51 508
+ * sit at 6-8 m, 33 466 at 10-13 m, 18 207 at 8-10 m and 1 230 at 2-4 m. There is
+ * no geometry at 2.5 m and there cannot be, because rawDist refuses everything
+ * closer than uNearCut and uNearCut measured 1.39 m in that frame. So the pass
+ * was normalised on empty space and the frame only ever saw the far tail of a
+ * 1/d^2 law: uIrrNorm * lampAtten(7) came to 0.1498, i.e. every gain in this
+ * block was silently running at 0.15 of its stated value — a factor of 6.7.
+ *
+ * That is the bulk of the round-34 ablation (cave floor +0.31%, night seabed
+ * +1.33%) and of most of why `?lamppool=8&lampadd=8&lampvol=8` looks right: 6.7 of
+ * that 8 is this one scalar, which has nothing to do with any of the three gains
+ * those switches scale, and the remaining 1.3x is the three defective operators
+ * named against MUL_MAX, uKnee and the deleted uNearCancel. 6.0 m is where the
+ * light is used, so 6.0 m is where it is
+ * normalised, and the gains below now mean what they say.
+ *
+ * LAMP_SOFT goes with it, and A PLAY ROUTE SET IT. At 1.60 the ratio from
+ * uNearCut (1.4 m) to the new reference is 21:1 — a range no single constant
+ * survives, which is exactly why three separate compressors had grown on top of
+ * this one law. The first cut of this round took it to 3.0 on that argument and
+ * the still battery was happy, because no still in the set ever puts terrain
+ * inside four metres of the lamp. `play.mjs --route=descend` does, repeatedly:
+ * three of its nine frames (106 m, 118 m and 138 m, all with the wall passing
+ * within a couple of metres) came back with a HARD-EDGED WHITE PLATEAU where the
+ * pool should be — no gradient inside it, no surface detail, a clean boundary
+ * against the rock. That is round seven's disc, found in motion by the one
+ * instrument that can see it.
+ *
+ * 12.0 fixes it where it is caused rather than at the output. The geometric
+ * near/far ratio over 2 m to 6 m falls from 5.57:1 to 3.00:1 and the pool keeps
+ * a live gradient
+ * instead of pinning against an asymptote, the 6 m anchor is untouched by
+ * construction (irr(DREF) = 1 for any s), and past 8 m it very slightly EXTENDS
+ * the reach rather than costing any. It is also the honest number for a beam
+ * rather than a bulb: a torch's reflector collimates over its first few metres
+ * and only then falls away as 1/d^2, which is why a dive light has a usable
+ * throw at all.
+ */
+const LAMP_DREF = 6.0;      // metres: where the pool is normalised — MEASURED
+const LAMP_SOFT = 12.0;     // reflector/collimation term in the 1/d^2 denominator
+const IRR_NORM = LAMP_DREF * LAMP_DREF + LAMP_SOFT;   // = 48.0
 
 /*
- * THE POOL'S LEVEL — RE-DERIVED NOW THAT THE POOL EXISTS.
+ * THE POOL'S LEVEL, SET AGAINST THE PLATE INSTEAD OF AGAINST A FRAME MEDIAN.
  *
- * 0.95 / 1.60 / 0.95 were fitted across rounds 8-16 against a pass that was
- * discarding on every pixel of every frame (see DEPTH_COPY_VERT). They are not
- * evidence about anything, and read against a working pass they are far too
- * small: at 0.95, on axis in the 192 m cave, the multiply arrived at dst*1.05 at
- * 8 m — 5%, which is inside the noise floor of the instrument used to measure
- * it. The reason is not the constant alone, it is that a lamp pays inverse
- * square AND the medium's extinction on the outbound leg, and 8 m of Jellyshroom
- * water is most of a decade on its own.
+ * These used to be justified by a sweep whose whole acceptance test was "the
+ * cave's whole-frame median moves 15.4 -> 15.6 (+1.3%)". A whole-frame median
+ * moving 1.3% is not a torch turning on, it is the noise floor with a story
+ * attached, and it is the same number the round-34 ablation reported back as
+ * +0.31%. The criterion, not just the constants, was the problem.
  *
- * Set by sweep rather than by argument: `?lamppool=6&lampadd=8` against
- * `?flashlight=0`, both at `?meter=0` so the exposure loop cannot hide or
- * manufacture the difference. At 6x/8x the cave's whole-frame median moves 15.4
- * -> 15.6 (+1.3%), p99.9 is unchanged at 232.9, clipAny stays 0.08%, and the
- * difference image is a soft geometry-shaped wash that follows the stalactites
- * and the cavern floor and stops at their silhouettes. At 1x the same difference
- * image is empty. So 6x/8x is legible and still nowhere near a disc, and these
- * are those multipliers folded in.
+ * THE TARGET, taken from the only plate in the set that shows a lamp on rock in
+ * this biome — cave-1.jpg, Jellyshroom Cavern at 209 m, seaglide lamp, against
+ * our cave shot at 192 m. Six 50x35 windows sampled along one row of the cavern
+ * floor through the pool and out the other side, EVERY ONE clipAny 0.00:
  *
- * MUL_MAX has to rise with MUL_GAIN or the fix undoes itself: the saturation
- * asymptote is what stops the near field blowing, and left at 1.60 against a
- * gain of 5.7 every surface inside about 4 m would pin against it and the pool
- * would grow exactly the flat plateau round seven had. At 4.2 the on-axis gain
- * still runs 2.95 at 1 m against 1.73 at 2.5 m — a live gradient through the
- * whole near field.
+ *   x=340  L 3.20e-3  G 1.72e-3  G/B 0.137   unlit floor
+ *   x=430  L 3.32e-3  G 1.81e-3  G/B 0.138   unlit floor
+ *   x=500  L 5.90e-3  G 5.02e-3  G/B 0.343   pool edge
+ *   x=560  L 1.444e-2 G 1.628e-2 G/B 0.851   pool
+ *   x=620  L 1.141e-2 G 1.219e-2 G/B 0.877   pool
+ *   x=740  L 9.82e-3  G 1.180e-2 G/B 1.002   pool
+ *   x=800  L 7.68e-3  G 4.15e-3  G/B 0.140   unlit floor again
+ *
+ * So a lamp pool on rock, in this water, at working distance, runs LUMINANCE
+ * x3.1 to x4.5 and GREEN x6.7 to x9.3 over the same floor unlit beside it, and
+ * it is defined by the green: the medium leaves the rock at G/B 0.137 and the
+ * pool takes it to 0.85-1.00. That is what "a torch is on" looks like measured.
+ *
+ * Ours, before this round, binned by angle from the lamp axis and by distance on
+ * our own cave frame, at 6-8 m: on axis (within 10 deg) luminance x1.59 and
+ * green x2.20; 10-20 deg x1.32 / x1.72; 20-31 deg x1.06 / x1.13. Against x3-4.5
+ * and x6.7-9.3 that is the 8x, and LAMP_DREF above is where 6.6x of it went.
+ *
+ * MUL_GAIN and ADD_REL barely move, because they were never the fault: with
+ * uIrrNorm reading 39.0 instead of 7.85 they finally mean what their comments
+ * always said. Solved for a pool gain of ~4.0 and a reveal floor of ~3x the
+ * surface's own green, on axis at 7 m in the cave.
+ *
+ * MUL_MAX 4.20 -> 14.0. The soft asymptote is meant to stop a surface the player
+ * swims into from blowing, and instead it was the LEVELLER. On axis at its own
+ * normalising distance, with the cave's live uniforms: the raw gain arrived at
+ * 9.22 and 4.2*g/(g+4.2) handed back 2.89, so 69 per cent of the pool was thrown
+ * away at the very distance the constant was fitted at, and everything nearer was
+ * compressed harder still. That is round seven's plateau rebuilt out of different
+ * arithmetic. At 9.00, with MUL_GAIN raised to hold the anchor, the working point
+ * runs raw 12.53 -> 5.24 while 2 m runs raw 56.22 -> 7.76: a live 1.48:1 gradient
+ * across a 3:1 stretch of the falloff, where the old pair gave a plateau. The
+ * play route is what set the second number — see LAMP_SOFT.
  */
-const MUL_GAIN = 5.70;      // pool: dst * (1 + MUL_GAIN) on axis at LAMP_DREF
-const MUL_MAX = 4.20;       // and the soft asymptote it can never pass
-const ADD_REL = 7.60;       // the reveal floor, in units of the water's radiance
+const MUL_GAIN = 9.50;      // pool: dst * (1 + MUL_GAIN) on axis at LAMP_DREF
+const MUL_MAX = 9.00;       // and the soft asymptote it can never pass
+const ADD_REL = 10.0;       // the reveal floor, in units of the water's radiance
 /*
  * VOL_REL IS SMALL ON PURPOSE, and the reference is why. cave-1.jpg is a
  * Jellyshroom cavern at 209 m lit by a Seamoth's lamps and deep-void-2.jpg is a
@@ -1518,6 +1628,7 @@ class Lamp {
       uLampDir: { value: this.dir },
       uLampCol: { value: new THREE.Color(1.0, 0.97, 0.88) },
       uIrrNorm: { value: IRR_NORM },
+      uSoft: { value: LAMP_SOFT },
       uSpreadInv: { value: 1 / (1 - Math.cos(0.42)) },
       uRange: { value: 26 },
       uHasDepth: { value: this.hasDepth ? 1 : 0 },
@@ -1540,7 +1651,6 @@ class Lamp {
       uAddKey: { value: new THREE.Vector3() },
       uVolKey: { value: 0 },
       uDither: { value: 0 },
-      uNearCancel: { value: new THREE.Vector3(1, 1, 1) },
       uKnee: { value: 1 },
     }));
 
@@ -1726,15 +1836,41 @@ class Lamp {
     this.uAdd.uVolKey.value = level * VOL_REL * clamp01(U.uUnderwater.value) * this._kVol;
 
     /*
-     * The knee is a SAFETY now, not a leveller. Its asymptote is 1/uKnee, and it
-     * is placed eight times above this pass's own operating point rather than
-     * on top of it: round seven ran a ceiling of 0.193 against a pool that
-     * arrived at 2.26, so every pixel inside the cone came out within 8% of the
-     * same value and the shading was gone. Eight times up, the operator is
-     * within a per-cent of the identity everywhere the lamp normally works and
-     * only ever acts on a creature that drifts a metre off the reflector.
+     * The knee is a SAFETY, and this line is where it stopped being one.
+     *
+     * Its asymptote is 1/uKnee and it was written as 1/(8*level), with a comment
+     * claiming that put it "eight times above this pass's own operating point".
+     * It does not. This pass's operating point is not `level`, it is
+     * ADD_REL*level — the reveal floor's own key, which was 7.6 — so the real
+     * headroom was 8*level / (7.6*level) = 1.05x. The knee was sitting on
+     * the value it was supposed to be protecting and returned 1/(1+ADD_REL/8) =
+     * 0.51 at the reference distance: it was halving the pass, which is round
+     * seven's ceiling under a different name and the third of three compressors
+     * this round found stacked on one 1/d^2 law.
+     *
+     * BUT THE FIX FOR THAT OVERSHOT, AND THE PLAY ROUTE CAUGHT IT. Written as
+     * 1/(8*ADD_REL*level) the asymptote becomes 64*level, i.e. the reveal floor
+     * was allowed to reach sixty-four times the radiance of the water it is
+     * lighting — and on the descent route, with the wall two metres off the
+     * lens, it did, and the pool came back as flat white.
+     *
+     * The ceiling has to be anchored on the WATER, which is what `level` already
+     * is, and its size comes from the plate: cave-1.jpg's pool runs x3.1 to x4.5
+     * the luminance of the floor beside it. Ten times the medium leaves better
+     * than a stop of headroom over the brightest thing the reference ever shows
+     * a lamp doing, and it is a real ceiling rather than a decorative one. At the
+     * TEN WAS STILL TOO HIGH — the descent route came back with clipAny 8.72% in
+     * the pool crop, i.e. the core was railing on nearly a tenth of it. Set to
+     * FIVE, which is the plate's own maximum: cave-1.jpg's brightest pool window
+     * is x4.5 the floor beside it, so a hard ceiling at five times the medium is
+     * the brightest thing the reference ever shows a lamp doing, with nothing
+     * above it to rail into. At the 6 m anchor the reveal floor arrives at about
+     * 3.37*level and the operator runs 0.598 there; ADD_REL is raised to 10.0
+     * to pay for that, so the working point is unchanged and only the near field
+     * moves. At 2 m it lands at 4.09*level against a raw 22.48.
      */
-    this.uAdd.uKnee.value = clamp(1 / (8 * Math.max(level, 1e-5)), 0.05, 400);
+    const KNEE_CEIL = 5;
+    this.uAdd.uKnee.value = clamp(1 / (KNEE_CEIL * Math.max(level, 1e-5)), 0.05, 400);
     this.uAdd.uDither.value = (this.uAdd.uDither.value + 0.618) % 1;
     this.moteU.uStrength.value = level * MOTE_REL;
   }
@@ -1782,9 +1918,6 @@ class Lamp {
     sh.uTexel.value.set(2 / Math.max(2, s.x), 2 / Math.max(2, s.y));
     this._copyDepth(ctx, s.x, s.y);
     this.moteU.uPixelScale.value = (s.y * 0.5) / Math.max(tanHalf, 1e-3);
-    // see the comment at the end of LAMP_ADD_FRAG
-    const ng = postfxNearGain(_nearGain);
-    this.uAdd.uNearCancel.value.set(1 / ng[0], 1 / ng[1], 1 / ng[2]);
   }
 }
 const _sizeV = new THREE.Vector2();
@@ -3198,33 +3331,85 @@ function torchGeo() {
    * is driven by the lamp's own power in setFill, so the model states its own
    * on/off. The forward-facing dish is still there for the 3/4 angles.
    */
-  CZ(0.0402, 0.0352, 0.020, -0.100, M_DARK);
-  // 4.5 mm PROUD of the housing behind it. At 0.0412 the collar was flush with
-  // the reflector's back end and the night frame showed a black head on a black
-  // background — the ring has to break the silhouette to do its job.
-  ring(0.0455, 0.0072, -0.114, M_LIT);            // the collar — reads from behind
   /*
-   * THE REFLECTOR NOW FLARES FORWARD, AND THE TWO FRONT RINGS ARE ATTACHED TO IT.
+   * ---- THE HEAD IS ONE CONTINUOUS SOLID NOW, AND IT HAS AN INSIDE.
    *
-   * CZ() rotates a CylinderGeometry by +PI/2 about X, which maps the cylinder's
-   * +Y (its `rt` end) onto +Z — the end nearest the player. So `CZ(0.0492,
-   * 0.0402, ...)` was 49 mm across at the BACK and 40 mm at the front: a
-   * reflector tapering the wrong way, narrowing toward the water. Swapped.
+   * Round 34 swapped the reflector's taper the right way round and said that
+   * fixed the open-crescent rings. Photographed at 4x on `dropoff` in the window
+   * the critic named (1140,590 220x190) it did not, and the reason is two
+   * separate faults that the taper only half touched.
    *
-   * That also fixes the "open-crescent collar rings" a critic read on this head.
-   * The two rings in front sat at radii 50.5 mm and 51.6 mm while the housing
-   * under them was only 40.8 mm and 40.5 mm — so their inner tube surface cleared
-   * the body by 3.7 mm and 4.5 mm and they were floating, unattached, in open
-   * water. The rear one was worse than floating: at z -0.163 it sat 4 mm BEYOND
-   * the housing's front face, with nothing behind it at all. With the flare the
-   * right way round the body is ~49 mm where they sit, so both rings now bite
-   * into it and read as a lip and a bezel instead of two hoops in mid-air.
+   * THE HEAD HAD A HOLE IN IT. The housing ran z -0.110 to -0.090 ending at
+   * radius 35.2 mm; the reflector ran z -0.159 to -0.111 starting at radius
+   * 40.2 mm. That is a ONE MILLIMETRE annular gap at z -0.110 to -0.111 with a
+   * FIVE MILLIMETRE radial step across it — an open slot straight into the head,
+   * on the seam the collar ring sits on.
+   *
+   * SO THE COLLAR WAS ONLY HALF SEATED. Its tube spans z -0.1068 to -0.1212 and
+   * its inner surface sits at radius 38.3 mm. Over the front half of that span
+   * the reflector is 40.2-42.1 mm and the ring bites in; over the BACK half the
+   * body is the old housing at 35.2-36.0 mm and the ring floats 2.3-3.1 mm clear
+   * of it, across the slot. A ring that is buried at one end of its own arc and
+   * airborne at the other is exactly what draws as an open crescent, and it does
+   * not matter which way the cone tapers.
+   *
+   * AND THERE WAS NOTHING BEHIND ANY OF IT. The reflector dish was a
+   * SphereGeometry hemisphere rotated -PI/2, i.e. bulging FORWARD into the water
+   * with its open side facing the eye — and an open shell's inside is
+   * backface-culled, so looking into the mouth from the only angle a first-person
+   * player ever has, you saw straight through it. Three lit hoops around a black
+   * void with the muzzle glow floating loose in the middle of it. That is the
+   * "head interior is empty geometry" reading, literally.
+   *
+   * Fixed on all three. The housing now ENDS at the radius the reflector starts
+   * at with no gap, so the silhouette is continuous from the barrel's knurl to
+   * the mouth; the collar is seated along its whole tube against a body that is
+   * never narrower than its inner surface; and the mouth is plugged by a closed
+   * oblate lens rather than by an open shell, so there is no direction the head
+   * can be looked into.
+   *
+   * The lens is STEEL, not lit. A 90 mm emissive disc facing the eye is the
+   * round-seven bright disc with a different name, and the head already states
+   * its own on/off twice — the light-pipe collar below, which is the honest
+   * read from behind, and setGlow's muzzle quad. What the lens has to do is
+   * carry FORM where there was a hole, and a specular oblate does that.
    */
-  CZ(0.0402, 0.0492, 0.048, -0.135, M_STEEL, 22);
-  ring(0.0505, 0.0060, -0.156, M_LIT);            // front lip, lit, in silhouette
-  ring(0.0512, 0.0062, -0.1575, M_DARK);          // bezel over it
-  p.push(part(new THREE.SphereGeometry(0.0445, 18, 10, 0, TAU, 0, Math.PI * 0.5), M_LIT,
-    [0, 0.052, -0.150], [-Math.PI / 2, 0, 0], [1, 0.42, 1]));
+  CZ(0.0356, 0.0392, 0.022, -0.100, M_DARK);      // throat: 39.2 mm where the flare starts
+  /*
+   * The light-pipe collar. 44.8 mm major with an 8.0 mm tube, so its inner
+   * surface is at 36.8 mm against a body that runs 38.2 mm at the back of the
+   * tube and 41.1 mm at the front — seated everywhere, with 11.7 to 14.6 mm of
+   * tube standing proud all the way round. It reads from behind, which is the
+   * only angle that matters, and it cannot thin to nothing on the far arc.
+   */
+  ring(0.0448, 0.0080, -0.113, M_LIT);
+  /*
+   * The reflector housing is SHELL, not steel, and that is the last of the
+   * "empty geometry" reading. M_STEEL is 0x647075 at metalness 0.48, so with no
+   * environment map and the sun already down to nothing at 74 m its diffuse lobe
+   * is halved and its specular has nothing to catch: photographed on `dropoff`
+   * the whole head rendered as flat black next to a barrel of M_SHELL that reads
+   * perfectly well two centimetres away. Geometry that renders black is
+   * indistinguishable from geometry that is not there, and the head is the one
+   * part of this tool the player is always looking straight at. A dive torch's
+   * head is the same anodised body as its barrel anyway; the steel is kept for
+   * the lens face, which then reads as a darker thing SET INTO a pale housing
+   * rather than as a hole in one.
+   */
+  CZ(0.0392, 0.0492, 0.052, -0.137, M_SHELL, 24);
+  // One bezel, not two lit hoops. Three rings of near-identical radius read as
+  // three hoops; a lit collar at the back and a dark rim at the mouth reads as a
+  // head.
+  ring(0.0505, 0.0058, -0.157, M_DARK);
+  // The lens: a closed oblate spheroid seated in the mouth — 44.8 mm across the
+  // equator against a bore of 46.7 mm there, so it plugs the cone from every
+  // direction rather than being an open dish with a culled interior.
+  p.push(part(new THREE.SphereGeometry(0.0448, 20, 10), M_STEEL,
+    [0, 0.052, -0.150], [Math.PI / 2, 0, 0], [1, 0.28, 1]));
+  // and the emitter behind it, breaking the lens's front pole by ~6 mm so the
+  // head reads as lit from in front and from 3/4 without a disc anywhere.
+  p.push(part(new THREE.SphereGeometry(0.0140, 12, 8), M_LIT,
+    [0, 0.052, -0.1600], [0, 0, 0], [1, 1, 0.5]));
 
   /*
    * ---- body furniture: a lit charge strip, the switch, vents, battery hump
@@ -3469,21 +3654,47 @@ const VM_GLOW = 8.50;    // the muzzle flare, which is a halo AROUND that collar
  * uniform — not a hand-fitted approximation of it, which is what the previous
  * three rounds of residual constants were.
  */
+/** Set by the module's init so free functions can reach ctx.get(). */
+let _lookupCtx = null;
 const _nearGain = [1, 1, 1];
+/**
+ * postfx's near-zone channel gain — READ, not reproduced.
+ *
+ * This used to be a hand-copy of postfx's arithmetic, and the copy went stale.
+ * Read off postfx's own live uniform against what this function was returning,
+ * at four shots, this round:
+ *
+ *   shot            postfx uGainNear             this function
+ *   cave 192.7 m    0.7818, 1.3000, 0.8260       0.7610, 1.4499, 0.7382
+ *   night-shallows  1.3000, 0.9607, 0.8145       1.4499, 0.9440, 0.7709
+ *   dropoff 74.4 m  1.3000, 0.9478, 0.8340       1.4499, 0.9270, 0.7874
+ *   grand-reef 280  1.3000, 1.0115, 0.7818       1.4499, 0.9947, 0.7382
+ *
+ * Wrong in every channel of every shot, and on the channel pinned to the clamp
+ * wrong by exactly 1.4499/1.3000 — postfx tightened that clamp from 1.45 to 1.30
+ * and nothing told this file. A duplicated constant in another module's units is
+ * a defect whatever value it holds, so take the uniform.
+ *
+ * The reproduction stays as a fallback for the case postfx is a stub or has
+ * moved its internals, with the clamp corrected; a stub postfx applies no grade
+ * at all, in which case the neutral it falls back to is also the right answer.
+ *
+ * NOTE this is the NEAR gain, and postfx applies a per-pixel blend of near, mid
+ * and far weighted by that pixel's fog amount. It is therefore only valid for
+ * things that are genuinely in the near zone — the view model at 0.4 m, which is
+ * the one caller left. The lamp used to cancel it across the whole screen; see
+ * the comment where that line used to be in LAMP_ADD_FRAG.
+ */
 function postfxNearGain(out) {
+  const live = _lookupCtx?.get?.('postfx')?.mComposite?.uniforms?.uGainNear?.value;
+  if (live && Number.isFinite(live.x)) { out[0] = live.x; out[1] = live.y; out[2] = live.z; return out; }
   const f = U.uFogColor.value;
   const y = 0.2126 * f.r + 0.7152 * f.g + 0.0722 * f.b;
   if (!(y > 1e-5)) { out[0] = out[1] = out[2] = 1; return out; }
-  // postfx's chromaDir clamps the direction to [0.45, 2.2]; its strength ramps
-  // 0.42 -> 0.48 over 35-150 m and scales with uUnderwater; the gain itself is
-  // then clamped to [0.70, 1.45]. Every one of those numbers is reproduced here
-  // rather than approximated, because the red leg is pinned on the upper clamp in
-  // every biome we ship and getting the clamp wrong is the difference between
-  // cancelling the operator and doubling it.
   const depth = Math.max(0, U.uWaterLevel.value - U.uCamPos.value.y);
-  const amt = (0.42 + 0.06 * smoothstep(35, 150, depth)) * clamp01(U.uUnderwater.value);
+  const amt = (0.34 + 0.06 * smoothstep(35, 150, depth)) * clamp01(U.uUnderwater.value);
   const c = [clamp(f.r / y, 0.45, 2.2), clamp(f.g / y, 0.45, 2.2), clamp(f.b / y, 0.45, 2.2)];
-  for (let i = 0; i < 3; i++) out[i] = clamp(1 + amt * (1 / c[i] - 1), 0.70, 1.45);
+  for (let i = 0; i < 3; i++) out[i] = clamp(1 + amt * (1 / c[i] - 1), 0.70, 1.30);
   return out;
 }
 
@@ -5668,6 +5879,9 @@ const api = {
   // ---- lifecycle -----------------------------------------------------------
   async init(ctx) {
     this._ctx = ctx;
+    // postfxNearGain() reads postfx's live uniform through this rather than
+    // reproducing its constants; see that function for what the copy cost us.
+    _lookupCtx = ctx;
     // ?notools builds nothing, so a critic can A/B the frame cost of this
     // module against the same seed without editing the manifest. Presence is
     // enough: tools/capture.mjs splits --seed=a=b on the first '=', so a flag

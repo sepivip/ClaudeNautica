@@ -714,9 +714,125 @@ class Build {
  * stalk hides them — one attribute instead of a second draw call and a second
  * animation path that could drift out of sync with the first.
  */
-function buildVine(seed) {
+/**
+ * Round-35 debug switches, read in init() BEFORE the archetypes are built.
+ * `?vinetwist=0` restores the round-34 flat-card frame and `?vineseg=3` restores
+ * its segment count, so "which half of the creepvine fix costs the frame" is
+ * answered by differencing two captures rather than argued about — the same rule
+ * the uSurf gains have followed since round six.
+ */
+let VINE_TWIST = 1, VINE_SEG = 0;
+
+function buildVine(seed, lod) {
   const rng = makeRNG(seed);
   const B = new Build();
+
+  /**
+   * ROUND 35 — THE ORIGAMI, AND WHERE IT ACTUALLY CAME FROM.
+   *
+   * Standing complaint: "the creepvine is still black origami". Zooming
+   * shots/flora-r35-base/kelp-forest.png 2x on the near crown against the same
+   * zoom of kelp-forest-1.jpg puts the difference beyond argument — every one of
+   * our blades is a straight-edged strap with mitred corners and ONE flat tone,
+   * where every blade in the plate is a continuously curving ribbon whose
+   * apparent width pulses along its length and whose flanks carry green light.
+   *
+   * The cause is a frame bug, and it is the SAME defect round 33 diagnosed on
+   * grass and fixed there only. Every row of a barb was authored with the same
+   * side vector, `s: [-sa, 0, ca]`:
+   *
+   *   - a ruled surface whose rulings are all PARALLEL is a developable strip.
+   *     Its two flanks keep one pair of normals from root to tip, so the whole
+   *     blade shades as a single facet however much the centreline curves —
+   *     literally a folded sheet of paper, which is what "origami" names;
+   *   - that side vector is not perpendicular to the tangent either. The
+   *     centreline sweeps radially, vertically AND tangentially (the hook), so
+   *     s.T is far from zero and blade()'s cross(s, T) came out short and
+   *     skewed: the cross-section shears instead of staying square, which is
+   *     what straightens the outline into chords;
+   *   - and with no rotation about the blade's own axis there is no orientation
+   *     variety anywhere on the plant, so no band of any blade ever faces the
+   *     sun. That is half of "black" — the other half is `fill: 0.05`, which is
+   *     deliberate and stays.
+   *
+   * buildGrass solved exactly this in round 33 and its comment says why: "on any
+   * blade, from any camera, some band of it faces the sun". This is that
+   * derivation, lifted verbatim in method — tangent by central difference, side
+   * projected perpendicular to it, then Rodrigues about the tangent — and shared
+   * by the barbs and the crown straps, which are the two things a kelp frame is
+   * made of. It adds NO triangles.
+   *
+   * `lod` builds the far variant: same centrelines, same widths, same twist,
+   * three segments instead of five. See ARCHETYPES.vinefar — a 0.8 m barb at
+   * 26 m is 29 px long and a chord sags under a pixel there, while the near
+   * crown strap that produced the screenshot above is 500 px long and its three
+   * chords are 170 px of dead-straight edge each.
+   */
+  const twistedBlade = (o) => {
+    const S = o.S;
+    const ca = Math.cos(o.ang), sa = Math.sin(o.ang);
+    // outward and tangential unit vectors at this azimuth, as buildGrass names them
+    const ex = ca, ez = sa, tx = -sa, tz = ca;
+    const cs = [];
+    for (let s = 0; s <= S; s++) {
+      const u = s / S;
+      const rad = o.r0 * 0.6 + o.len * u * (1.0 - o.radK * u * u);
+      const y = o.t + o.len * (o.rise * Math.pow(u, 0.62) - o.curl * u * u * u) + o.dy;
+      // the sweep does nearly all of its turning in the last third — a hook,
+      // where a plain quadratic sweep is a banana. `swpK` keeps the crown's
+      // quadratic and the barb's cubic exactly as rounds seven and eight left
+      // them; nothing about the centreline is being re-litigated here.
+      const swp = o.len * o.hook * u * u * (o.swpK + (1 - o.swpK) * u);
+      cs.push([o.x + ex * rad + tx * swp, y, o.z + ez * rad + tz * swp]);
+    }
+    const rows = [];
+    for (let s = 0; s <= S; s++) {
+      const u = s / S;
+      const A0 = cs[Math.max(0, s - 1)], C0 = cs[Math.min(S, s + 1)];
+      let Tx = C0[0] - A0[0], Ty = C0[1] - A0[1], Tz = C0[2] - A0[2];
+      const tl = Math.hypot(Tx, Ty, Tz) || 1;
+      Tx /= tl; Ty /= tl; Tz /= tl;
+      // side = the whorl's tangential direction with the tangent component
+      // removed, so the cross-section stays square to the blade as it hooks
+      let sx = tx, sy = 0, sz = tz;
+      const d = sx * Tx + sy * Ty + sz * Tz;
+      sx -= d * Tx; sy -= d * Ty; sz -= d * Tz;
+      let sl = Math.hypot(sx, sy, sz);
+      if (sl < 1e-4) { sx = ex; sy = 0; sz = ez; sl = 1; }   // blade runs along t
+      sx /= sl; sy /= sl; sz /= sl;
+      // and now rotate it about the blade's own axis. b = T x s is already unit
+      // and perpendicular to both, so Rodrigues reduces to s*cos + b*sin.
+      const th = o.twist * u;
+      const cth = Math.cos(th), sth = Math.sin(th);
+      const bx = Ty * sz - Tz * sy, by = Tz * sx - Tx * sz, bz = Tx * sy - Ty * sx;
+      rows.push({
+        c: cs[s],
+        s: [sx * cth + bx * sth, sy * cth + by * sth, sz * cth + bz * sth],
+        // The outline is unchanged in amplitude — round eight measured the 5:1
+        // proportion off kelp-forest-4 at matched apparent scale and that
+        // measurement is not what this round disputes. What changes is that five
+        // segments actually RESOLVE the notch harmonic authored for it: at three
+        // segments a 1.1-cycle ripple sampled four times is one arbitrary kink
+        // per edge, which is the mitred corner in the screenshot.
+        // sin^2, not |sin|. Same period and the same 0..1 range, so round
+        // eight's notch AMPLITUDE is untouched — our fine octave measures 13.72
+        // against the plate's 14.95 on the mid-distance stand, so this is not a
+        // band to spend down. What changes is that |sin| has a CUSP at every
+        // zero, and once five segments resolved the harmonic that cusp became a
+        // sharp machined V cut into the outline of every near blade. sin^2 is
+        // C1, so the same energy arrives as a ripple instead of a saw tooth.
+        w: o.len * o.halfW * Math.sin(Math.pow(u, o.wPow) * Math.PI)
+           * (1.0 - o.notch * Math.pow(Math.sin(u * 7.0 + o.prt * 5.0), 2)) + o.wMin,
+        // the midrib is deepest at the base and flattens toward the tip, the
+        // way a real pinna's keel does
+        rib: o.rib0 - o.ribK * u,
+        sw: Math.pow(o.t, 1.5),
+        fw: o.fw0 + o.fwK * u,             // the tip flutters, the base does not
+        gl: 0, sh: o.sh0 + o.shK * clamp01(o.shA + u * 0.3), prt: o.prt,
+      });
+    }
+    B.blade(rows);
+  };
   // 46 rings, not 38. Node spacing is the number that decides whether a stalk
   // reads as a rope or as a corn plant: at 38 rings over 30 m the blades sat
   // 0.81 m apart and 1.08 m long, so the column showed bare smooth stalk
@@ -798,6 +914,20 @@ function buildVine(seed) {
   // the triangles come back out of the segment count, because a 0.7 m blade
   // seen from 10 m is nine pixels long and does not need five rings.
   const BL = 0.027;                          // blade length as a fraction of height
+  // SEGMENTS. The far variant keeps round eight's three exactly, so the stand
+  // behind the near plants is the geometry rounds seven and eight tuned and
+  // nothing about the mid-distance silhouette moves this round. The near variant
+  // spends on the two things a kelp frame is actually made of, and the crown
+  // gets more than the barbs because `canopy: [0.93, 0.075]` deliberately lets a
+  // crown come to 2.6 m of the lens: a 1.4 m strap there is 500 px long, so its
+  // three chords were 170 px of straight edge each.
+  // Six and eight, not five and six. The first capture of this fix put the near
+  // crown at five, and a 4x zoom of the plant sitting 1.5 m off the lens still
+  // showed 70 px of dead-straight chord per segment. The near pool only ever
+  // holds what is inside 30 m — 72 plants in the measured kelp-forest frame —
+  // so the whole bump is 0.32M triangles on a 14M frame, which is the trade
+  // this LOD split exists to make.
+  const BS = lod ? 3 : (VINE_SEG || 6), CS = lod ? 3 : (VINE_SEG ? VINE_SEG + 2 : 8);
   for (let j = 1; j < RINGS - 1; j++) {
     const A = axis[j];
     const pairs = j > RINGS - 7 ? 9 : 7;
@@ -806,7 +936,6 @@ function buildVine(seed) {
       // still visibly a regular seven-pointed star, and a column of regular
       // stars is a machined part. Real whorls clump.
       const ang = j * GOLD + q * (TAU / pairs) + rng() * 0.9;
-      const ca = Math.cos(ang), sa = Math.sin(ang);
       const len = BL * (0.82 + 0.52 * rng());
       const rise = 0.30 + 0.26 * rng();      // how much it climbs on the way out
       // curl > rise, always, and by a lot: the tip has to end well BELOW where
@@ -816,44 +945,39 @@ function buildVine(seed) {
       // what turns a thistle into the reference's bottle brush.
       const curl = rise + 0.92 + 0.62 * rng();
       const hook = (rng() < 0.5 ? -1 : 1) * (0.44 + 0.42 * rng());
+      // THE TWIST — see the header of twistedBlade(). Signed, so a whorl does
+      // not roll one way as a unit, and never near zero: a blade with no twist
+      // is the flat card this round exists to delete. 0.85-1.90 rad is 49-109
+      // degrees over the blade's length, which is what makes the reference
+      // ribbon appear to narrow and widen along itself as it turns edge-on and
+      // back. buildGrass uses +-0.95 for a 0.6 m seagrass blade; a creepvine
+      // barb is longer and curls further, so it carries more.
+      const twist = VINE_TWIST * (rng() < 0.5 ? -1 : 1) * (0.85 + 1.05 * rng());
       const prt = rng();
-      const rows = [];
-      const S = 3;
-      for (let s = 0; s <= S; s++) {
-        const u = s / S;
-        const rad = A.r * 0.6 + len * u * (1.0 - 0.36 * u * u);   // it curls back in
-        const y = A.t + len * (rise * Math.pow(u, 0.62) - curl * u * u * u) - 0.0025;
-        // the sweep is cubic in u, so the barb leaves the stalk almost radially
-        // and does nearly all of its turning in the last third — a hook, where a
-        // quadratic sweep is a banana
-        const swp = len * hook * u * u * (0.45 + 0.55 * u);
-        rows.push({
-          c: [A.x + ca * rad - sa * swp, y, A.z + sa * rad + ca * swp],
-          s: [-sa, 0, ca],
-          // a thorn-blade: narrow, widest a third of the way out, drawn to a
-          // point. 0.058 of length as a half-width is a ~9:1 barb, which is the
-          // reference proportion. The notch harmonic makes the outline TOOTHED,
-          // which is what the reference blades are and which is the cheapest
-          // fine-octave silhouette energy in the module: the kelp plate measured
-          // 13.1 % in the finest band against the reference's 16.2, and on an
-          // object whose whole identity is being black against bright water,
-          // fine energy can only come from more edge per pixel.
-          // 0.095, not 0.058: a 10:1 blade is a spine and reads as a needle, and
-          // the capture duly came back looking like a thistle. Measured off
-          // kelp-forest-4 at matched apparent scale the reference frond is about
-          // 5:1, which is also what the midrib needs to read as a fold rather
-          // than as a drawn line.
-          w: len * 0.095 * Math.sin(Math.pow(u, 0.50) * Math.PI)
-             * (1.0 - 0.34 * Math.abs(Math.sin(u * 7.0 + prt * 5.0))) + 0.0004,
-          // the midrib is deepest at the base and flattens toward the tip, the
-          // way a real pinna's keel does
-          rib: 0.72 - 0.34 * u,
-          sw: Math.pow(A.t, 1.5),
-          fw: 0.18 + 0.55 * u,               // the tip flutters, the base does not
-          gl: 0, sh: 0.28 + 0.50 * clamp01(A.t * 1.4 + u * 0.3), prt,
-        });
-      }
-      B.blade(rows);
+      twistedBlade({
+        x: A.x, z: A.z, t: A.t, r0: A.r, dy: -0.0025,
+        ang, len, rise, curl, hook, twist, prt,
+        radK: 0.36,                        // it curls back in
+        swpK: 0.45,                        // cubic sweep
+        // a thorn-blade: narrow, widest a third of the way out, drawn to a
+        // point. 0.058 of length as a half-width is a ~9:1 barb. The notch
+        // harmonic makes the outline TOOTHED, which is what the reference blades
+        // are and which is the cheapest fine-octave silhouette energy in the
+        // module: the kelp plate measured 13.1 % in the finest band against the
+        // reference's 16.2, and on an object whose whole identity is being black
+        // against bright water, fine energy can only come from more edge per
+        // pixel.
+        // 0.095, not 0.058: a 10:1 blade is a spine and reads as a needle, and
+        // the capture duly came back looking like a thistle. Measured off
+        // kelp-forest-4 at matched apparent scale the reference frond is about
+        // 5:1, which is also what the midrib needs to read as a fold rather
+        // than as a drawn line.
+        halfW: 0.095, wPow: 0.50, notch: 0.34, wMin: 0.0004,
+        rib0: 0.72, ribK: 0.34,
+        fw0: 0.18, fwK: 0.55,
+        sh0: 0.28, shK: 0.50, shA: A.t * 1.4,
+        S: BS,
+      });
     }
   }
 
@@ -874,30 +998,28 @@ function buildVine(seed) {
     const t0 = 0.870 + rng() * 0.122;
     const A = { t: t0, x: lerp(axis[RINGS - 2].x, axis[RINGS - 1].x, 0.5), z: lerp(axis[RINGS - 2].z, axis[RINGS - 1].z, 0.5), r: R0 * 0.9 };
     const ang = k * GOLD + rng() * 0.4;
-    const ca = Math.cos(ang), sa = Math.sin(ang);
     const len = BL * (0.90 + 0.86 * rng());
     const rise = 0.40 + 0.50 * rng();
     const curl = rise + 0.70 + 0.72 * rng();
     const hook = (rng() < 0.5 ? -1 : 1) * (0.50 + 0.46 * rng());
+    // The crown straps carry MORE twist than the barbs, because these are the
+    // ones kelp-forest-1 shows curling right over and back on themselves — the
+    // tendrils escaping the head in that plate turn through most of a half
+    // revolution, and a 16:1 ribbon that never rolls can only ever be a straight
+    // black spike against bright water.
+    const twist = VINE_TWIST * (rng() < 0.5 ? -1 : 1) * (1.10 + 1.40 * rng());
     const prt = rng();
-    const rows = [];
-    const S = 3;
-    for (let s = 0; s <= S; s++) {
-      const u = s / S;
-      const rad = A.r * 0.6 + len * u * (1.0 - 0.20 * u * u);
-      const y = A.t + len * (rise * Math.pow(u, 0.62) - curl * u * u * u);
-      const swp = len * hook * u * u;
-      rows.push({
-        c: [A.x + ca * rad - sa * swp, y, A.z + sa * rad + ca * swp],
-        s: [-sa, 0, ca],
-        w: len * 0.062 * Math.sin(Math.pow(u, 0.55) * Math.PI) + 0.0005,
-        rib: 0.70 - 0.30 * u,
-        sw: Math.pow(A.t, 1.5),
-        fw: 0.24 + 0.62 * u,
-        gl: 0, sh: 0.34 + 0.52 * clamp01(0.9 + u * 0.3), prt,
-      });
-    }
-    B.blade(rows);
+    twistedBlade({
+      x: A.x, z: A.z, t: A.t, r0: A.r, dy: 0,
+      ang, len, rise, curl, hook, twist, prt,
+      radK: 0.20,
+      swpK: 1.0,                           // quadratic sweep, as round eight left it
+      halfW: 0.062, wPow: 0.55, notch: 0, wMin: 0.0005,
+      rib0: 0.70, ribK: 0.30,
+      fw0: 0.24, fwK: 0.62,
+      sh0: 0.34, shK: 0.52, shA: 0.9,
+      S: CS,
+    });
   }
 
   // ---- holdfast: short roots splayed over the sand. AGENT_BRIEF §4 rejects
@@ -1794,7 +1916,20 @@ const ARCHETYPES = {
   // reference's nearest stalk is two to four metres out and reads as a rope. At
   // 2.6 m the in-scattered path is still under a tenth of the far field's, so
   // essentially all of the contrast survives and the plant reads as a plant.
-  vine:   { build: buildVine,                cull: 118, fade: 22, max: 1250, near: 2.6, nearK: 0.02, cast: false, surf: 0.80, canopy: [0.93, 0.075] },
+  //
+  // ROUND 35 — THE TWO-LEVEL POOL, the pattern round 33 established for grass.
+  // Giving the near blades the segments they need to stop being origami costs
+  // 2900 triangles a plant, and the measured stand is 713 vines in kelp-forest —
+  // 2.1M triangles to buy curvature on plants that are 30 m away and 20 px wide,
+  // which is exactly the trade round 33 refused for turf. `lodFar` routes
+  // everything past `lodD` into the geometry rounds seven and eight tuned, so
+  // the mid-distance silhouette is byte-identical to last round's and only the
+  // handful of plants you are standing inside pay. Near and far sample the SAME
+  // parametric centreline at u = s/S, so they agree exactly at root and tip and
+  // differ only by chord sag — at 30 m that is under a pixel and the switch
+  // cannot pop.
+  vine:   { build: (s) => buildVine(s, 0),   cull: 118, fade: 22, max: 300, near: 2.6, nearK: 0.02, cast: false, surf: 0.80, canopy: [0.93, 0.075],
+            lodFar: 'vinefar', lodD: 30 },
   // ROUND 33 — max 20000, not 15000, and it is not a wish: `stats()` returns
   // grass = 15000 exactly on shallows-floor, kelp-forest AND shallows-reef, so
   // the cap has been the binding constraint on turf coverage in every shot, not
@@ -1842,6 +1977,15 @@ const ARCHETYPES = {
   sphere: { build: buildSphere,              cull: 88,  fade: 12, max: 380,  near: 0.5, nearK: 0.25, cast: true, canopy: [0.94, 0.56], surf: 1.30 },
   palm:   { build: buildPalm,                cull: 72,  fade: 10, max: 1200, near: 0.4, nearK: 0.18, cast: false, canopy: [0.76, 0.66], surf: 1.00 },
   shell:  { build: buildShell,               cull: 24,  fade: 4,  max: 3400, cast: false, surf: 1.40 },
+  // LOD VARIANTS LIVE AT THE BOTTOM, and `seedAs` makes each one the SAME PLANT
+  // as its near partner rather than a differently-rolled one. Both rules are
+  // explained where the seeds are drawn in init(). Every field except `build`
+  // and the LOD plumbing must match its partner exactly: cull, fade, near, nearK
+  // and canopy are properties of the PLANT and the refill decides them before it
+  // picks a mesh, so a disagreement here would make the two pools disagree about
+  // where a plant stops existing and the switch would pop.
+  vinefar: { build: (s) => buildVine(s, 1), seedAs: 'vine',
+             cull: 118, fade: 22, max: 1250, near: 2.6, nearK: 0.02, cast: false, surf: 0.80, canopy: [0.93, 0.075] },
 };
 
 /** blood grass and redwort take the stiff variant of the grass tuft. */
@@ -2373,10 +2517,43 @@ const uSurf = { value: new THREE.Vector4(1.0, 1.0, 0.38, 0.26) };
  *
  * Amplitudes are inside the documented clamps (grain <= 0.25, wear/streak <= 1).
  * Streak is near zero: gravity streaking is what a hull that has sat in water
- * for years does, and a living plant sheds. grain 0.20 was chosen by measuring
- * the kelp plate spectrum, not by eye — see the report.
+ * for years does, and a living plant sheds.
+ *
+ * ROUND 35 — THE 0.20 / 0.25 DISCREPANCY, RECONCILED, AND THE ABLATION THAT
+ * SETTLES WHAT THIS FIELD IS WORTH.
+ *
+ * This comment said "grain 0.20 was chosen by measuring the kelp plate spectrum"
+ * while the shipped value was 0.25 — the clamp ceiling — with nothing in the
+ * file or the reports supporting the drift. Restored to the value the derivation
+ * names. That is bookkeeping, NOT an art claim, and the measurement below is why
+ * it can be nothing else.
+ *
+ * Round 35's brief blamed this preset for burying the blade geometry. `?flcore=`
+ * now scales these three gains alone, so the claim is finally testable, and it
+ * is false. Same page, same frame, no simulation step between grabs — the near-
+ * plant window `--crop=0.05,0.15,0.20,0.60` on shallows-floor:
+ *
+ *   flora's own uSurf field ON, core 1x -> 0x   detail 24.45 -> 24.99  (+2.2%)
+ *   flora's own uSurf field OFF, core 1x -> 0x  mean |delta| 1.03/255 over the crop
+ *   flora's own uSurf field ON  -> OFF          detail 24.45 -> 13.03  (-46.7%)
+ *
+ * The +2.2% is inside the round-to-round noise floor AND has the wrong sign, so
+ * removing this preset entirely does not move the excess. Deleting flora's own
+ * field halves it. The path is live and correctly wired — the compiled fragment
+ * shader carries `#define UW_SURFACE` and the redirected `flSurfApply(...)` call
+ * — and driving these gains to 8x does visibly change the frame, so this is a
+ * real measurement of a small term and not a dead switch.
+ *
+ * WHY it is small, since a 0.25 multiplicative grain ought not to be: sfApply is
+ * handed vSurfP as BOTH the sample point and the world position, so core's
+ * band-limiter computes `length(vSurfP - uCamPos)` — a distance to a point in
+ * the plant's compressed material space, not to the plant. The octaves it picks
+ * then land mostly BELOW one cycle across a blade, i.e. core's contribution here
+ * is very nearly a per-instance DC tint rather than texture. That is a defect,
+ * but fixing it would ADD fine-octave energy to the exact window the round says
+ * already carries twice the plate's, so it is reported rather than fixed.
  */
-const FLORA_SURFACE = { grain: 0.25, wear: 0.45, streak: 0.08, scale: 0.9 };
+const FLORA_SURFACE = { grain: 0.20, wear: 0.45, streak: 0.08, scale: 0.9 };
 
 /**
  * DEFENSIVE — see coreBugs in the round-8 report.
@@ -3117,6 +3294,9 @@ export default {
     uSurf.value.set(num('flsurf', s0.x), num('flhue', s0.y), num('flbump', s0.z), num('flmot', s0.w));
     if (flag('flnosurf')) uSurf.value.set(0, 0, 0, 0);
     if (flag('flnobump')) uSurf.value.z = 0;
+    // Read BEFORE the archetype build loop below, because both change geometry.
+    VINE_TWIST = num('vinetwist', VINE_TWIST);
+    VINE_SEG = Math.max(0, Math.round(num('vineseg', VINE_SEG)));
     SPECIES.kelp_vine.gi = num('podgi', SPECIES.kelp_vine.gi);
     SPECIES.blood_vine.gi = num('podgi2', SPECIES.blood_vine.gi);
     if (flag('flnoglow')) for (const s of Object.values(SPECIES)) if (s.glow) s.gi = 0;
@@ -3127,7 +3307,8 @@ export default {
     // creepvine reading as a palm for three rounds. It only ever sets .visible,
     // it is gated on a parameter, and it owns nothing it touches.
     isolate = flag('floraiso');
-    this.debug = { uSurf: uSurf.value.toArray(), podgi: SPECIES.kelp_vine.gi, isolate };
+    this.debug = { uSurf: uSurf.value.toArray(), podgi: SPECIES.kelp_vine.gi, isolate,
+      vineTwist: VINE_TWIST, vineSeg: VINE_SEG, floraSurface: { ...FLORA_SURFACE } };
 
     bakeColours();
     terrain = ctx.get('terrain');
@@ -3161,10 +3342,32 @@ export default {
     depthMaterial = makeDepthMaterial();
     poolMaterial = makePoolMaterial();
 
+    /**
+     * ARCHETYPE SEEDS. `seedAs` is not decoration and neither is the position of
+     * the LOD entries at the bottom of ARCHETYPES. Two things go wrong without
+     * them, and round 35 hit both:
+     *
+     *   AN LOD PAIR MUST SHARE ITS SEED. The far variant is meant to be the SAME
+     *   PLANT at a coarser tessellation. Drawn from the running counter it is a
+     *   different plant — different blade angles, different pod count — and a
+     *   30 m creepvine would visibly morph as it crossed lodD. A 1 m grass tuft
+     *   got away with that; the largest plant in the game will not.
+     *
+     *   ADDING AN ARCHETYPE MUST NOT RESEED THE REST. Inserting `vinefar` in the
+     *   middle of this object shifted every later archetype by one draw, which
+     *   re-rolled the tube, shroom and coral geometry and moved the whole
+     *   shallows-floor frame by 750k triangles — so the first A/B of this
+     *   round's creepvine work was measuring a re-rolled reef. Appending, and
+     *   spending no counter draw on a `seedAs` entry, keeps every pre-existing
+     *   archetype bit-identical to the round before it.
+     */
+    const archSeeds = new Map();
     let seed = (20250 + WORLD_SEED * 7) >>> 0;
     let tris = 0;
     for (const [name, arch] of Object.entries(ARCHETYPES)) {
-      const geo = arch.build(seed += 977);
+      const s = arch.seedAs ? archSeeds.get(arch.seedAs) : (seed += 977);
+      archSeeds.set(name, s);
+      const geo = arch.build(s);
       tris += geo.userData.tris;
       const pool = new Pool(name, arch, geo, material, depthMaterial);
       pools.set(name, pool);

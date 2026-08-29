@@ -7,6 +7,193 @@ apparatus was wrong, not the game.
 
 ---
 
+## Round 35: terrain 57->68, watersurface 53->57, tools 41->47; two core bugs of mine fixed
+
+TWO BUGS IN MY OWN CORE CODE, both found by the terrain critic while it was
+trying to prove its own work:
+
+1. ?nocaustocc=1 GATED ONLY THE PLAYER. main.js pushed the player behind the
+   flag but left the modules.values() causticOccluders loop ungated, so the
+   ablation could not empty the list and could not turn the mechanism off. Sixth
+   inert ablation flag in this project — the class of bug that has cost more
+   rounds here than any other. Now verified to move the frame.
+
+2. PENUMBRA SCALED WITH RADIUS, NOT DISTANCE. underwaterMaterial.js smoothstepped
+   o.w*0.45..o.w*1.35, so a pebble and a whale threw equally crisp shadows and
+   neither softened with range. Now widens with distance to the occluder.
+
+ROUND RESULTS. terrain 68: caustic occlusion is genuinely live and verified by
+in-page A/B, and its refusal was upheld on both halves. watersurface 57: the
+black tail is largely closed (under-L45 57.06% -> 0.00%, every octave moved
+toward the plate) and its wave-table refusal reproduced exactly — four pairs
+within 3 degrees of orthogonal, ratios 1.396-1.405 against sqrt2. tools 47: the
+torch finally reveals the world (cave window L 6.35e-3 -> 2.23e-2) and five real
+defects were fixed at source, including a stale copy of postfx's near-gain
+constants that had drifted from the live uniform.
+
+WHAT THE CRITICS REFUSED TO PASS. tools: the multiplicative pool term scales the
+medium's own colour, so switching the torch on drops hueVar 0.323 -> 0.258 and
+relative red 50.2 -> 39.6 — it worsens the project's #1 named defect, while the
+additive pass alone holds 0.317 / 47.8. watersurface: both plates carry a
+near-to-far chroma ramp of 28-44% in gbLinear and ours moves under 3%; the
+builder's hue defence tested within-band variance, which is the wrong axis.
+terrain: a 45-degree comb in the sand, anisotropy 1.537 diagonal against 1.168
+in x/y where the plate reads 1.05-1.25, now unmasked by the quieter grain.
+
+flora's critic died on a StructuredOutput retry cap, so flora's builder work is
+in the tree UNJUDGED.
+
+Independently corroborated: watersurface's critic measured a MAX frame of
+9,232.7 ms from two shader-compile stalls of 36 and 35 programs, none of them its
+own — the same defect perfprobe found, confirmed by an agent that was not
+looking for it.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+---
+
+## perfprobe: cold shader cache by default; a 4th stall fix failed and was reverted
+
+MEASUREMENT FIX. Chrome persists compiled programs to a GPU shader disk cache
+that survives launches, so every probe run warmed the cache for the next one and
+back-to-back A/Bs compared a cold arm against a warm one instead of the change
+under test. perfprobe now passes --disable-gpu-shader-disk-cache by default
+(--warmcache=1 for the repeat-launch case), because a player's first launch after
+a reboot is the cold case.
+
+FIX #4, REVERTED. A warm-up that forced visible=true for the duration of
+compileAsync and restored it immediately after. The reasoning was sound —
+compile() only walks and compiles, it never draws, so forcing visibility has no
+visual effect and reaches the culled geometry that defeated attempts 1-3. It is
+simply inert:
+
+    cold, warm-up ON    108.5 / 106.7 fps    MAX 8,206 / 8,771 ms
+    cold, warm-up OFF   104.7 fps            MAX 7,960 ms
+
+WHAT THE NUMBERS ACTUALLY SAY NOW. Moving, the game holds ~105 fps with p50 under
+7 ms, and still throws single frames of 6-9 SECONDS. The earlier 18 fps / 26,692
+ms reading does not reproduce in eight subsequent runs and should be treated as
+an outlier, not the baseline — the real, repeatable defect is an ~8 s freeze, not
+a 27 s one.
+
+RULED OUT SO FAR: the shadow map (?noshadows=1 changes nothing), the per-second
+enableShadows pass, the shader disk cache, and all four warm-up strategies. The
+world has ~94 distinct program variants (48 MeshStandard configurations, 21
+Lambert, 15 depth, plus creature animation modes) and they compile lazily and
+synchronously as content streams in.
+
+Four fixes have now failed, which by the debugging rule this project follows means
+the architecture is the problem rather than the patch: either the program variety
+has to come down, or compilation has to be moved off the frame entirely. Handing
+that judgement to Beka rather than attempting a fifth guess overnight.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+---
+
+## perfprobe: swim like a player — the stall is 10x worse than the static probe showed
+
+Beka asked whether him running the game would help. It did: the probe sat with a
+STATIC camera and saw one or two compile stalls in 110 s, while he — swimming
+around — called the game almost unplayable. Moving drags new species, biomes,
+terrain and structures into view continuously, and every first draw of an
+uncompiled material variant is another synchronous compile.
+
+    static camera   90 fps   worst frame  2,520 ms   2 programs per stall
+    swimming        18 fps   worst frame 26,692 ms  31 programs per stall
+
+Three separate freezes of 16, 25 and 26 SECONDS in a 100 s run, each compiling
+about thirty shader programs at once. The static measurement was of a strictly
+easier case than the one a player experiences, and it under-reported the severity
+by an order of magnitude.
+
+perfprobe now holds KeyW and steers through a set of legs by default
+(--move=0 restores the old static behaviour).
+
+RULED OUT: the shadow map. With ?noshadows=1 and the map fully disabled while
+moving, it still reads 17.6 fps with a 24,803 ms worst frame — so the depth
+variants visible in the compile logs are a symptom, not the cause. main.js gains
+?noshadows=1 and ?noshadowloop=1 as declared godMode ablations for the ongoing
+investigation.
+
+Still open: ~30 enormous programs compile lazily and synchronously as the world
+streams in. This is architectural — either the program variety has to come down,
+or every variant has to be warmed before it can be drawn, and the obvious warming
+route is blocked because modules range-cull with visible=false while three.js
+compile() walks with traverseVisible.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+---
+
+## Add perfprobe.mjs — measure the REAL rAF loop, which nothing ever did
+
+Beka reported the game hitching every ~30s in actual play. Every fps number in
+35 rounds came from capture.mjs, which FREEZES the loop and steps it manually
+(fpsSource 'step'). That measures engine.render() on an already-warm program set
+and never runs simulate() at all, so this class of defect was structurally
+invisible to the whole loop.
+
+perfprobe.mjs runs the game the way a player does — real requestAnimationFrame,
+no capture flag, no freezing — and reports a per-second series (a periodic stall
+averages away over a short window), per-module update/preRender cost, browser
+longtasks, and the shader programs that compile mid-play.
+
+FOUND, with the loop running: p50 is a healthy 10-11 ms, but single frames hit
+2,200-4,300 ms. The stall is inside engine.render() (worst render call 4,257 ms
+against a 4.9 ms average), and it compiles two programs as it happens:
+
+    depth,CN_MODE,1,...
+    physical,CN_MODE,1,...
+
+CN_MODE is creatures.js's per-animation-mode #define. three.js compiles a
+program lazily and synchronously on first draw; our materials carry the shared
+underwater injection plus surface microstructure and are enormous, so a creature
+mode arriving mid-play costs ~2.5 s of frozen main thread, plus its depth variant
+for the shadow pass (creatures.js:5544 sets castShadow = true).
+
+TWO FIXES ATTEMPTED AND BOTH REVERTED, recorded so nobody repeats them:
+ 1. A precompile guard that set visible = false before compileAsync. Useless:
+    compile() walks with traverseVisible (three.core.js:15596), so hiding the
+    object skips the exact material being warmed.
+ 2. The same guard parking the mesh on an undrawn layer instead. Also useless,
+    for a deeper reason: creatures are range-culled with visible = false by their
+    own module, so compileAsync skips them regardless of what this guard does —
+    while the guard had already marked the material "seen" and would never retry.
+
+That second failure is the real finding: precompiling through an API keyed on
+scene visibility cannot work for objects whose visibility another module owns.
+The fix is architectural and belongs in creatures.js — collapse CN_MODE from a
+compile-time define to a uniform so there is one program instead of one per mode,
+or instantiate and warm every mode at boot behind the loading screen.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+---
+
+## Point sync-public.sh at the renamed public repo
+
+The public repo is now sepivip/ClaudeNautica and this private one is
+sepivip/ClaudeNautica-private, so the clean name belongs to the shareable
+repository.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+---
+
+## Add sync-public.sh: push the tree (not the history) to the public repo
+
+The two repos deliberately do not share history — reference/subnautica/ holds
+copyrighted Subnautica frames and node_modules/ was committed before the
+gitignore existed, and both are permanently in this repo's history. The script
+copies the current tree instead, regenerates HISTORY.md from the commit log,
+refuses to run if the build does not render, and aborts if excluded content
+somehow reaches the index.
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+---
+
 ## flora: separate core's surface gains from flora's own; retract the r35 grain premise
 
 Round 35's brief told flora that FLORA_SURFACE's grain of 0.25 was burying the
